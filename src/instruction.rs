@@ -1,5 +1,6 @@
 use crate::addressmode::AddrMode;
 use crate::operation::OpCode;
+use crate::instruction_hex::*;
 
 #[derive(Debug)]
 pub struct Instruction {
@@ -7,222 +8,303 @@ pub struct Instruction {
     pub mode: AddrMode,
 }
 
-// See http://www.6502.org/tutorials/6502opcodes.html
-pub fn get_instruction(instr: u8) -> Option<Instruction> {
+// @Improvement: Instead of using a match, I could create a table with all instructions..
+// const X: &[Option<Instruction>; u8::MAX as usize] = [
+//
+// ];
+
+pub fn decode_instruction(instr: u8) -> Option<Instruction> {
     match instr {
         // ADC
-        0x69 => Some(Instruction{op: OpCode::ADC, mode: AddrMode::IMM}),
-        0x65 => Some(Instruction{op: OpCode::ADC, mode: AddrMode::ZPG}),
-        0x75 => Some(Instruction{op: OpCode::ADC, mode: AddrMode::ZPX}),
-        0x6D => Some(Instruction{op: OpCode::ADC, mode: AddrMode::ABS}),
-        0x7D => Some(Instruction{op: OpCode::ADC, mode: AddrMode::ABX}),
-        0x79 => Some(Instruction{op: OpCode::ADC, mode: AddrMode::ABY}),
-        0x61 => Some(Instruction{op: OpCode::ADC, mode: AddrMode::INX}),
-        0x71 => Some(Instruction{op: OpCode::ADC, mode: AddrMode::INY}),
+        ADC_IMM => Some(Instruction{op: OpCode::ADC, mode: AddrMode::IMM}),
+        ADC_ZPG => Some(Instruction{op: OpCode::ADC, mode: AddrMode::ZPG}),
+        ADC_ZPX => Some(Instruction{op: OpCode::ADC, mode: AddrMode::ZPX}),
+        ADC_ABS => Some(Instruction{op: OpCode::ADC, mode: AddrMode::ABS}),
+        ADC_ABX => Some(Instruction{op: OpCode::ADC, mode: AddrMode::ABX}),
+        ADC_ABY => Some(Instruction{op: OpCode::ADC, mode: AddrMode::ABY}),
+        ADC_INX => Some(Instruction{op: OpCode::ADC, mode: AddrMode::INX}),
+        ADC_INY => Some(Instruction{op: OpCode::ADC, mode: AddrMode::INY}),
 
         // AND
-        0x29 => Some(Instruction{op: OpCode::AND, mode: AddrMode::IMM}),
-        0x25 => Some(Instruction{op: OpCode::AND, mode: AddrMode::ZPG}),
-        0x35 => Some(Instruction{op: OpCode::AND, mode: AddrMode::ZPX}),
-        0x2D => Some(Instruction{op: OpCode::AND, mode: AddrMode::ABS}),
-        0x3D => Some(Instruction{op: OpCode::AND, mode: AddrMode::ABX}),
-        0x39 => Some(Instruction{op: OpCode::AND, mode: AddrMode::ABY}),
-        0x21 => Some(Instruction{op: OpCode::AND, mode: AddrMode::INX}),
-        0x31 => Some(Instruction{op: OpCode::AND, mode: AddrMode::INY}),
+        AND_IMM => Some(Instruction{op: OpCode::AND, mode: AddrMode::IMM}),
+        AND_ZPG => Some(Instruction{op: OpCode::AND, mode: AddrMode::ZPG}),
+        AND_ZPX => Some(Instruction{op: OpCode::AND, mode: AddrMode::ZPX}),
+        AND_ABS => Some(Instruction{op: OpCode::AND, mode: AddrMode::ABS}),
+        AND_ABX => Some(Instruction{op: OpCode::AND, mode: AddrMode::ABX}),
+        AND_ABY => Some(Instruction{op: OpCode::AND, mode: AddrMode::ABY}),
+        AND_INX => Some(Instruction{op: OpCode::AND, mode: AddrMode::INX}),
+        AND_INY => Some(Instruction{op: OpCode::AND, mode: AddrMode::INY}),
 
         // ASL
-        0x0A => Some(Instruction{op: OpCode::ASL, mode: AddrMode::ACC}),
-        0x06 => Some(Instruction{op: OpCode::ASL, mode: AddrMode::ZPG}),
-        0x16 => Some(Instruction{op: OpCode::ASL, mode: AddrMode::ZPX}),
-        0x0E => Some(Instruction{op: OpCode::ASL, mode: AddrMode::ABS}),
-        0x1E => Some(Instruction{op: OpCode::ASL, mode: AddrMode::ABX}),
+        ASL_ACC => Some(Instruction{op: OpCode::ASL, mode: AddrMode::ACC}),
+        ASL_ZPG => Some(Instruction{op: OpCode::ASL, mode: AddrMode::ZPG}),
+        ASL_ZPX => Some(Instruction{op: OpCode::ASL, mode: AddrMode::ZPX}),
+        ASL_ABS => Some(Instruction{op: OpCode::ASL, mode: AddrMode::ABS}),
+        ASL_ABX => Some(Instruction{op: OpCode::ASL, mode: AddrMode::ABX}),
 
         // BIT
-        0x24 => Some(Instruction{op: OpCode::BIT, mode: AddrMode::ZPG}),
-        0x2C => Some(Instruction{op: OpCode::BIT, mode: AddrMode::ABS}),
+        BIT_ZPG => Some(Instruction{op: OpCode::BIT, mode: AddrMode::ZPG}),
+        BIT_ABS => Some(Instruction{op: OpCode::BIT, mode: AddrMode::ABS}),
 
         // Branch Instructions
-        0x10 => Some(Instruction{op: OpCode::BPL, mode: AddrMode::REL}),
-        0x30 => Some(Instruction{op: OpCode::BMI, mode: AddrMode::REL}),
-        0x50 => Some(Instruction{op: OpCode::BVC, mode: AddrMode::REL}),
-        0x70 => Some(Instruction{op: OpCode::BVS, mode: AddrMode::REL}),
-        0x90 => Some(Instruction{op: OpCode::BCC, mode: AddrMode::REL}),
-        0xB0 => Some(Instruction{op: OpCode::BCS, mode: AddrMode::REL}),
-        0xD0 => Some(Instruction{op: OpCode::BNE, mode: AddrMode::REL}),
-        0xF0 => Some(Instruction{op: OpCode::BEQ, mode: AddrMode::REL}),
+        BPL_REL => Some(Instruction{op: OpCode::BPL, mode: AddrMode::REL}),
+        BMI_REL => Some(Instruction{op: OpCode::BMI, mode: AddrMode::REL}),
+        BVC_REL => Some(Instruction{op: OpCode::BVC, mode: AddrMode::REL}),
+        BVS_REL => Some(Instruction{op: OpCode::BVS, mode: AddrMode::REL}),
+        BCC_REL => Some(Instruction{op: OpCode::BCC, mode: AddrMode::REL}),
+        BCS_REL => Some(Instruction{op: OpCode::BCS, mode: AddrMode::REL}),
+        BNE_REL => Some(Instruction{op: OpCode::BNE, mode: AddrMode::REL}),
+        BEQ_REL => Some(Instruction{op: OpCode::BEQ, mode: AddrMode::REL}),
 
         // BRK
-        0x00 => Some(Instruction{op: OpCode::BRK, mode: AddrMode::IMP}),
+        BRK_IMP => Some(Instruction{op: OpCode::BRK, mode: AddrMode::IMP}),
 
         // CMP
-        0xC9 => Some(Instruction{op: OpCode::CMP, mode: AddrMode::IMM}),
-        0xC5 => Some(Instruction{op: OpCode::CMP, mode: AddrMode::ZPG}),
-        0xD5 => Some(Instruction{op: OpCode::CMP, mode: AddrMode::ZPX}),
-        0xCD => Some(Instruction{op: OpCode::CMP, mode: AddrMode::ABS}),
-        0xDD => Some(Instruction{op: OpCode::CMP, mode: AddrMode::ABX}),
-        0xD9 => Some(Instruction{op: OpCode::CMP, mode: AddrMode::ABY}),
-        0xC1 => Some(Instruction{op: OpCode::CMP, mode: AddrMode::INX}),
-        0xD1 => Some(Instruction{op: OpCode::CMP, mode: AddrMode::INY}),
+        CMP_IMM => Some(Instruction{op: OpCode::CMP, mode: AddrMode::IMM}),
+        CMP_ZPG => Some(Instruction{op: OpCode::CMP, mode: AddrMode::ZPG}),
+        CMP_ZPX => Some(Instruction{op: OpCode::CMP, mode: AddrMode::ZPX}),
+        CMP_ABS => Some(Instruction{op: OpCode::CMP, mode: AddrMode::ABS}),
+        CMP_ABX => Some(Instruction{op: OpCode::CMP, mode: AddrMode::ABX}),
+        CMP_ABY => Some(Instruction{op: OpCode::CMP, mode: AddrMode::ABY}),
+        CMP_INX => Some(Instruction{op: OpCode::CMP, mode: AddrMode::INX}),
+        CMP_INY => Some(Instruction{op: OpCode::CMP, mode: AddrMode::INY}),
 
         // CPX
-        0xE0 => Some(Instruction{op: OpCode::CPX, mode: AddrMode::IMM}),
-        0xE4 => Some(Instruction{op: OpCode::CPX, mode: AddrMode::ZPG}),
-        0xEC => Some(Instruction{op: OpCode::CPX, mode: AddrMode::ABS}),
+        CPX_IMM => Some(Instruction{op: OpCode::CPX, mode: AddrMode::IMM}),
+        CPX_ZPG => Some(Instruction{op: OpCode::CPX, mode: AddrMode::ZPG}),
+        CPX_ABS => Some(Instruction{op: OpCode::CPX, mode: AddrMode::ABS}),
         
         // CPY
-        0xC0 => Some(Instruction{op: OpCode::CPY, mode: AddrMode::IMM}),
-        0xC4 => Some(Instruction{op: OpCode::CPY, mode: AddrMode::ZPG}),
-        0xCC => Some(Instruction{op: OpCode::CPY, mode: AddrMode::ABS}),
+        CPY_IMM => Some(Instruction{op: OpCode::CPY, mode: AddrMode::IMM}),
+        CPY_ZPG => Some(Instruction{op: OpCode::CPY, mode: AddrMode::ZPG}),
+        CPY_ABS => Some(Instruction{op: OpCode::CPY, mode: AddrMode::ABS}),
         
         // DEC
-        0xC6 => Some(Instruction{op: OpCode::DEC, mode: AddrMode::ZPG}),
-        0xD6 => Some(Instruction{op: OpCode::DEC, mode: AddrMode::ZPX}),
-        0xCE => Some(Instruction{op: OpCode::DEC, mode: AddrMode::ABS}),
-        0xDE => Some(Instruction{op: OpCode::DEC, mode: AddrMode::ABX}),
+        DEC_ZPG => Some(Instruction{op: OpCode::DEC, mode: AddrMode::ZPG}),
+        DEC_ZPX => Some(Instruction{op: OpCode::DEC, mode: AddrMode::ZPX}),
+        DEC_ABS => Some(Instruction{op: OpCode::DEC, mode: AddrMode::ABS}),
+        DEC_ABX => Some(Instruction{op: OpCode::DEC, mode: AddrMode::ABX}),
 
         // EOR
-        0x49 => Some(Instruction{op: OpCode::EOR, mode: AddrMode::IMM}),
-        0x45 => Some(Instruction{op: OpCode::EOR, mode: AddrMode::ZPG}),
-        0x55 => Some(Instruction{op: OpCode::EOR, mode: AddrMode::ZPX}),
-        0x4D => Some(Instruction{op: OpCode::EOR, mode: AddrMode::ABS}),
-        0x5D => Some(Instruction{op: OpCode::EOR, mode: AddrMode::ABX}),
-        0x59 => Some(Instruction{op: OpCode::EOR, mode: AddrMode::ABY}),
-        0x41 => Some(Instruction{op: OpCode::EOR, mode: AddrMode::INX}),
-        0x51 => Some(Instruction{op: OpCode::EOR, mode: AddrMode::INY}),
+        EOR_IMM => Some(Instruction{op: OpCode::EOR, mode: AddrMode::IMM}),
+        EOR_ZPG => Some(Instruction{op: OpCode::EOR, mode: AddrMode::ZPG}),
+        EOR_ZPX => Some(Instruction{op: OpCode::EOR, mode: AddrMode::ZPX}),
+        EOR_ABS => Some(Instruction{op: OpCode::EOR, mode: AddrMode::ABS}),
+        EOR_ABX => Some(Instruction{op: OpCode::EOR, mode: AddrMode::ABX}),
+        EOR_ABY => Some(Instruction{op: OpCode::EOR, mode: AddrMode::ABY}),
+        EOR_INX => Some(Instruction{op: OpCode::EOR, mode: AddrMode::INX}),
+        EOR_INY => Some(Instruction{op: OpCode::EOR, mode: AddrMode::INY}),
 
         // Flag Instructions
-        0x18 => Some(Instruction{op: OpCode::CLC, mode: AddrMode::IMP}),
-        0x38 => Some(Instruction{op: OpCode::SEC, mode: AddrMode::IMP}),
-        0x58 => Some(Instruction{op: OpCode::CLI, mode: AddrMode::IMP}),
-        0x78 => Some(Instruction{op: OpCode::SEI, mode: AddrMode::IMP}),
-        0xB8 => Some(Instruction{op: OpCode::CLV, mode: AddrMode::IMP}),
-        0xD8 => Some(Instruction{op: OpCode::CLD, mode: AddrMode::IMP}),
-        0xF8 => Some(Instruction{op: OpCode::SED, mode: AddrMode::IMP}),
+        CLC_IMP => Some(Instruction{op: OpCode::CLC, mode: AddrMode::IMP}),
+        SEC_IMP => Some(Instruction{op: OpCode::SEC, mode: AddrMode::IMP}),
+        CLI_IMP => Some(Instruction{op: OpCode::CLI, mode: AddrMode::IMP}),
+        SEI_IMP => Some(Instruction{op: OpCode::SEI, mode: AddrMode::IMP}),
+        CLV_IMP => Some(Instruction{op: OpCode::CLV, mode: AddrMode::IMP}),
+        CLD_IMP => Some(Instruction{op: OpCode::CLD, mode: AddrMode::IMP}),
+        SED_IMP => Some(Instruction{op: OpCode::SED, mode: AddrMode::IMP}),
 
         // INC
-        0xE6 => Some(Instruction{op: OpCode::INC, mode: AddrMode::ZPG}),
-        0xF6 => Some(Instruction{op: OpCode::INC, mode: AddrMode::ZPX}),
-        0xEE => Some(Instruction{op: OpCode::INC, mode: AddrMode::ABS}),
-        0xFE => Some(Instruction{op: OpCode::INC, mode: AddrMode::ABX}),
+        INC_ZPG => Some(Instruction{op: OpCode::INC, mode: AddrMode::ZPG}),
+        INC_ZPX => Some(Instruction{op: OpCode::INC, mode: AddrMode::ZPX}),
+        INC_ABS => Some(Instruction{op: OpCode::INC, mode: AddrMode::ABS}),
+        INC_ABX => Some(Instruction{op: OpCode::INC, mode: AddrMode::ABX}),
 
         // JMP
-        0x4C => Some(Instruction{op: OpCode::JMP, mode: AddrMode::ABS}),
-        0x6C => Some(Instruction{op: OpCode::JMP, mode: AddrMode::IND}),
+        JMP_ABS => Some(Instruction{op: OpCode::JMP, mode: AddrMode::ABS}),
+        JMP_IND => Some(Instruction{op: OpCode::JMP, mode: AddrMode::IND}),
 
         // JSR
-        0x20 => Some(Instruction{op: OpCode::JSR, mode: AddrMode::ABS}),
+        JSR_ABS => Some(Instruction{op: OpCode::JSR, mode: AddrMode::ABS}),
 
         // LDA
-        0xA9 => Some(Instruction{op: OpCode::LDA, mode: AddrMode::IMM}),
-        0xA5 => Some(Instruction{op: OpCode::LDA, mode: AddrMode::ZPG}),
-        0xB5 => Some(Instruction{op: OpCode::LDA, mode: AddrMode::ZPX}),
-        0xAD => Some(Instruction{op: OpCode::LDA, mode: AddrMode::ABS}),
-        0xBD => Some(Instruction{op: OpCode::LDA, mode: AddrMode::ABX}),
-        0xB9 => Some(Instruction{op: OpCode::LDA, mode: AddrMode::ABY}),
-        0xA1 => Some(Instruction{op: OpCode::LDA, mode: AddrMode::INX}),
-        0xB1 => Some(Instruction{op: OpCode::LDA, mode: AddrMode::INY}),
+        LDA_IMM => Some(Instruction{op: OpCode::LDA, mode: AddrMode::IMM}),
+        LDA_ZPG => Some(Instruction{op: OpCode::LDA, mode: AddrMode::ZPG}),
+        LDA_ZPX => Some(Instruction{op: OpCode::LDA, mode: AddrMode::ZPX}),
+        LDA_ABS => Some(Instruction{op: OpCode::LDA, mode: AddrMode::ABS}),
+        LDA_ABX => Some(Instruction{op: OpCode::LDA, mode: AddrMode::ABX}),
+        LDA_ABY => Some(Instruction{op: OpCode::LDA, mode: AddrMode::ABY}),
+        LDA_INX => Some(Instruction{op: OpCode::LDA, mode: AddrMode::INX}),
+        LDA_INY => Some(Instruction{op: OpCode::LDA, mode: AddrMode::INY}),
 
         // LDX
-        0xA2 => Some(Instruction{op: OpCode::LDX, mode: AddrMode::IMM}),
-        0xA6 => Some(Instruction{op: OpCode::LDX, mode: AddrMode::ZPG}),
-        0xB6 => Some(Instruction{op: OpCode::LDX, mode: AddrMode::ZPY}),
-        0xAE => Some(Instruction{op: OpCode::LDX, mode: AddrMode::ABS}),
-        0xBE => Some(Instruction{op: OpCode::LDX, mode: AddrMode::ABY}),
+        LDX_IMM => Some(Instruction{op: OpCode::LDX, mode: AddrMode::IMM}),
+        LDX_ZPG => Some(Instruction{op: OpCode::LDX, mode: AddrMode::ZPG}),
+        LDX_ZPY => Some(Instruction{op: OpCode::LDX, mode: AddrMode::ZPY}),
+        LDX_ABS => Some(Instruction{op: OpCode::LDX, mode: AddrMode::ABS}),
+        LDX_ABY => Some(Instruction{op: OpCode::LDX, mode: AddrMode::ABY}),
 
         // LDY
-        0xA0 => Some(Instruction{op: OpCode::LDY, mode: AddrMode::IMM}),
-        0xA4 => Some(Instruction{op: OpCode::LDY, mode: AddrMode::ZPG}),
-        0xB4 => Some(Instruction{op: OpCode::LDY, mode: AddrMode::ZPX}),
-        0xAC => Some(Instruction{op: OpCode::LDY, mode: AddrMode::ABS}),
-        0xBC => Some(Instruction{op: OpCode::LDY, mode: AddrMode::ABX}),
+        LDY_IMM => Some(Instruction{op: OpCode::LDY, mode: AddrMode::IMM}),
+        LDY_ZPG => Some(Instruction{op: OpCode::LDY, mode: AddrMode::ZPG}),
+        LDY_ZPX => Some(Instruction{op: OpCode::LDY, mode: AddrMode::ZPX}),
+        LDY_ABS => Some(Instruction{op: OpCode::LDY, mode: AddrMode::ABS}),
+        LDY_ABX => Some(Instruction{op: OpCode::LDY, mode: AddrMode::ABX}),
 
         // LSR
-        0x4A => Some(Instruction{op: OpCode::LSR, mode: AddrMode::ACC}),
-        0x46 => Some(Instruction{op: OpCode::LSR, mode: AddrMode::ZPG}),
-        0x56 => Some(Instruction{op: OpCode::LSR, mode: AddrMode::ZPX}),
-        0x4E => Some(Instruction{op: OpCode::LSR, mode: AddrMode::ABS}),
-        0x5E => Some(Instruction{op: OpCode::LSR, mode: AddrMode::ABX}),
+        LSR_ACC => Some(Instruction{op: OpCode::LSR, mode: AddrMode::ACC}),
+        LSR_ZPG => Some(Instruction{op: OpCode::LSR, mode: AddrMode::ZPG}),
+        LSR_ZPX => Some(Instruction{op: OpCode::LSR, mode: AddrMode::ZPX}),
+        LSR_ABS => Some(Instruction{op: OpCode::LSR, mode: AddrMode::ABS}),
+        LSR_ABX => Some(Instruction{op: OpCode::LSR, mode: AddrMode::ABX}),
 
         // NOP
-        0xEA => Some(Instruction{op: OpCode::NOP, mode: AddrMode::IMP}),
+        NOP_IMP => Some(Instruction{op: OpCode::NOP, mode: AddrMode::IMP}),
 
         // ORA
-        0x09 => Some(Instruction{op: OpCode::ORA, mode: AddrMode::IMM}),
-        0x05 => Some(Instruction{op: OpCode::ORA, mode: AddrMode::ZPG}),
-        0x15 => Some(Instruction{op: OpCode::ORA, mode: AddrMode::ZPX}),
-        0x0D => Some(Instruction{op: OpCode::ORA, mode: AddrMode::ABS}),
-        0x1D => Some(Instruction{op: OpCode::ORA, mode: AddrMode::ABX}),
-        0x19 => Some(Instruction{op: OpCode::ORA, mode: AddrMode::ABY}),
-        0x01 => Some(Instruction{op: OpCode::ORA, mode: AddrMode::INX}),
-        0x11 => Some(Instruction{op: OpCode::ORA, mode: AddrMode::INY}),
+        ORA_IMM => Some(Instruction{op: OpCode::ORA, mode: AddrMode::IMM}),
+        ORA_ZPG => Some(Instruction{op: OpCode::ORA, mode: AddrMode::ZPG}),
+        ORA_ZPX => Some(Instruction{op: OpCode::ORA, mode: AddrMode::ZPX}),
+        ORA_ABS => Some(Instruction{op: OpCode::ORA, mode: AddrMode::ABS}),
+        ORA_ABX => Some(Instruction{op: OpCode::ORA, mode: AddrMode::ABX}),
+        ORA_ABY => Some(Instruction{op: OpCode::ORA, mode: AddrMode::ABY}),
+        ORA_INX => Some(Instruction{op: OpCode::ORA, mode: AddrMode::INX}),
+        ORA_INY => Some(Instruction{op: OpCode::ORA, mode: AddrMode::INY}),
 
         // Register Instructions
-        0xAA => Some(Instruction{op: OpCode::TAX, mode: AddrMode::IMP}),
-        0x8A => Some(Instruction{op: OpCode::TXA, mode: AddrMode::IMP}),
-        0xCA => Some(Instruction{op: OpCode::DEX, mode: AddrMode::IMP}),
-        0xE8 => Some(Instruction{op: OpCode::INX, mode: AddrMode::IMP}),
-        0xA8 => Some(Instruction{op: OpCode::TAY, mode: AddrMode::IMP}),
-        0x98 => Some(Instruction{op: OpCode::TYA, mode: AddrMode::IMP}),
-        0x88 => Some(Instruction{op: OpCode::DEY, mode: AddrMode::IMP}),
-        0xC8 => Some(Instruction{op: OpCode::INY, mode: AddrMode::IMP}),
+        TAX_IMP => Some(Instruction{op: OpCode::TAX, mode: AddrMode::IMP}),
+        TXA_IMP => Some(Instruction{op: OpCode::TXA, mode: AddrMode::IMP}),
+        DEX_IMP => Some(Instruction{op: OpCode::DEX, mode: AddrMode::IMP}),
+        INX_IMP => Some(Instruction{op: OpCode::INX, mode: AddrMode::IMP}),
+        TAY_IMP => Some(Instruction{op: OpCode::TAY, mode: AddrMode::IMP}),
+        TYA_IMP => Some(Instruction{op: OpCode::TYA, mode: AddrMode::IMP}),
+        DEY_IMP => Some(Instruction{op: OpCode::DEY, mode: AddrMode::IMP}),
+        INY_IMP => Some(Instruction{op: OpCode::INY, mode: AddrMode::IMP}),
 
         // ROL
-        0x2A => Some(Instruction{op: OpCode::ROL, mode: AddrMode::ACC}),
-        0x26 => Some(Instruction{op: OpCode::ROL, mode: AddrMode::ZPG}),
-        0x36 => Some(Instruction{op: OpCode::ROL, mode: AddrMode::ZPX}),
-        0x2E => Some(Instruction{op: OpCode::ROL, mode: AddrMode::ABS}),
-        0x3E => Some(Instruction{op: OpCode::ROL, mode: AddrMode::ABX}),
+        ROL_ACC => Some(Instruction{op: OpCode::ROL, mode: AddrMode::ACC}),
+        ROL_ZPG => Some(Instruction{op: OpCode::ROL, mode: AddrMode::ZPG}),
+        ROL_ZPX => Some(Instruction{op: OpCode::ROL, mode: AddrMode::ZPX}),
+        ROL_ABS => Some(Instruction{op: OpCode::ROL, mode: AddrMode::ABS}),
+        ROL_ABX => Some(Instruction{op: OpCode::ROL, mode: AddrMode::ABX}),
 
         // ROR
-        0x6A => Some(Instruction{op: OpCode::ROR, mode: AddrMode::ACC}),
-        0x66 => Some(Instruction{op: OpCode::ROR, mode: AddrMode::ZPG}),
-        0x76 => Some(Instruction{op: OpCode::ROR, mode: AddrMode::ZPX}),
-        0x6E => Some(Instruction{op: OpCode::ROR, mode: AddrMode::ABS}),
-        0x7E => Some(Instruction{op: OpCode::ROR, mode: AddrMode::ABX}),
+        ROR_ACC => Some(Instruction{op: OpCode::ROR, mode: AddrMode::ACC}),
+        ROR_ZPG => Some(Instruction{op: OpCode::ROR, mode: AddrMode::ZPG}),
+        ROR_ZPX => Some(Instruction{op: OpCode::ROR, mode: AddrMode::ZPX}),
+        ROR_ABS => Some(Instruction{op: OpCode::ROR, mode: AddrMode::ABS}),
+        ROR_ABX => Some(Instruction{op: OpCode::ROR, mode: AddrMode::ABX}),
 
         // RTI
-        0x40 => Some(Instruction{op: OpCode::RTI, mode: AddrMode::IMP}),
+        RTI_IMP => Some(Instruction{op: OpCode::RTI, mode: AddrMode::IMP}),
 
         // RTS
-        0x60 => Some(Instruction{op: OpCode::RTS, mode: AddrMode::IMP}),
+        RTS_IMP => Some(Instruction{op: OpCode::RTS, mode: AddrMode::IMP}),
 
         // SBC
-        0xE9 => Some(Instruction{op: OpCode::SBC, mode: AddrMode::IMM}),
-        0xE5 => Some(Instruction{op: OpCode::SBC, mode: AddrMode::ZPG}),
-        0xF5 => Some(Instruction{op: OpCode::SBC, mode: AddrMode::ZPX}),
-        0xED => Some(Instruction{op: OpCode::SBC, mode: AddrMode::ABS}),
-        0xFD => Some(Instruction{op: OpCode::SBC, mode: AddrMode::ABX}),
-        0xF9 => Some(Instruction{op: OpCode::SBC, mode: AddrMode::ABY}),
-        0xE1 => Some(Instruction{op: OpCode::SBC, mode: AddrMode::INX}),
-        0xF1 => Some(Instruction{op: OpCode::SBC, mode: AddrMode::INY}),
+        SBC_IMM => Some(Instruction{op: OpCode::SBC, mode: AddrMode::IMM}),
+        SBC_ZPG => Some(Instruction{op: OpCode::SBC, mode: AddrMode::ZPG}),
+        SBC_ZPX => Some(Instruction{op: OpCode::SBC, mode: AddrMode::ZPX}),
+        SBC_ABS => Some(Instruction{op: OpCode::SBC, mode: AddrMode::ABS}),
+        SBC_ABX => Some(Instruction{op: OpCode::SBC, mode: AddrMode::ABX}),
+        SBC_ABY => Some(Instruction{op: OpCode::SBC, mode: AddrMode::ABY}),
+        SBC_INX => Some(Instruction{op: OpCode::SBC, mode: AddrMode::INX}),
+        SBC_INY => Some(Instruction{op: OpCode::SBC, mode: AddrMode::INY}),
 
         // STA
-        0x85 => Some(Instruction{op: OpCode::STA, mode: AddrMode::ZPG}),
-        0x95 => Some(Instruction{op: OpCode::STA, mode: AddrMode::ZPX}),
-        0x8D => Some(Instruction{op: OpCode::STA, mode: AddrMode::ABS}),
-        0x9D => Some(Instruction{op: OpCode::STA, mode: AddrMode::ABX}),
-        0x99 => Some(Instruction{op: OpCode::STA, mode: AddrMode::ABY}),
-        0x81 => Some(Instruction{op: OpCode::STA, mode: AddrMode::INX}),
-        0x91 => Some(Instruction{op: OpCode::STA, mode: AddrMode::INY}),
+        STA_ZPG => Some(Instruction{op: OpCode::STA, mode: AddrMode::ZPG}),
+        STA_ZPX => Some(Instruction{op: OpCode::STA, mode: AddrMode::ZPX}),
+        STA_ABS => Some(Instruction{op: OpCode::STA, mode: AddrMode::ABS}),
+        STA_ABX => Some(Instruction{op: OpCode::STA, mode: AddrMode::ABX}),
+        STA_ABY => Some(Instruction{op: OpCode::STA, mode: AddrMode::ABY}),
+        STA_INX => Some(Instruction{op: OpCode::STA, mode: AddrMode::INX}),
+        STA_INY => Some(Instruction{op: OpCode::STA, mode: AddrMode::INY}),
 
         // Stack Instructions
-        0x9A => Some(Instruction{op: OpCode::TXS, mode: AddrMode::IMP}),
-        0xBA => Some(Instruction{op: OpCode::TSX, mode: AddrMode::IMP}),
-        0x48 => Some(Instruction{op: OpCode::PHA, mode: AddrMode::IMP}),
-        0x68 => Some(Instruction{op: OpCode::PLA, mode: AddrMode::IMP}),
-        0x08 => Some(Instruction{op: OpCode::PHP, mode: AddrMode::IMP}),
-        0x28 => Some(Instruction{op: OpCode::PLP, mode: AddrMode::IMP}),
+        TXS_IMP => Some(Instruction{op: OpCode::TXS, mode: AddrMode::IMP}),
+        TSX_IMP => Some(Instruction{op: OpCode::TSX, mode: AddrMode::IMP}),
+        PHA_IMP => Some(Instruction{op: OpCode::PHA, mode: AddrMode::IMP}),
+        PLA_IMP => Some(Instruction{op: OpCode::PLA, mode: AddrMode::IMP}),
+        PHP_IMP => Some(Instruction{op: OpCode::PHP, mode: AddrMode::IMP}),
+        PLP_IMP => Some(Instruction{op: OpCode::PLP, mode: AddrMode::IMP}),
 
         // STX
-        0x86 => Some(Instruction{op: OpCode::STX, mode: AddrMode::ZPG}),
-        0x96 => Some(Instruction{op: OpCode::STX, mode: AddrMode::ZPY}),
-        0x8E => Some(Instruction{op: OpCode::STX, mode: AddrMode::ABS}),
+        STX_ZPG => Some(Instruction{op: OpCode::STX, mode: AddrMode::ZPG}),
+        STX_ZPY => Some(Instruction{op: OpCode::STX, mode: AddrMode::ZPY}),
+        STX_ABS => Some(Instruction{op: OpCode::STX, mode: AddrMode::ABS}),
 
         // STY
-        0x84 => Some(Instruction{op: OpCode::STY, mode: AddrMode::ZPG}),
-        0x94 => Some(Instruction{op: OpCode::STY, mode: AddrMode::ZPX}),
-        0x8C => Some(Instruction{op: OpCode::STY, mode: AddrMode::ABS}),
+        STY_ZPG => Some(Instruction{op: OpCode::STY, mode: AddrMode::ZPG}),
+        STY_ZPX => Some(Instruction{op: OpCode::STY, mode: AddrMode::ZPX}),
+        STY_ABS => Some(Instruction{op: OpCode::STY, mode: AddrMode::ABS}),
 
         _ => None,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_adc_imm() {
+        let instr = decode_instruction(ADC_IMM);
+        assert!(instr.is_some());
+        let instr = instr.unwrap();
+        assert_eq!(instr.op, OpCode::ADC);
+        assert_eq!(instr.mode, AddrMode::IMM);
+    }
+
+    #[test]
+    fn test_adc_zpg() {
+        let instr = decode_instruction(ADC_ZPG);
+        assert!(instr.is_some());
+        let instr = instr.unwrap();
+        assert_eq!(instr.op, OpCode::ADC);
+        assert_eq!(instr.mode, AddrMode::ZPG);
+    }
+
+    #[test]
+    fn test_adc_zpx() {
+        let instr = decode_instruction(ADC_ZPX);
+        assert!(instr.is_some());
+        let instr = instr.unwrap();
+        assert_eq!(instr.op, OpCode::ADC);
+        assert_eq!(instr.mode, AddrMode::ZPX);
+    }
+
+    #[test]
+    fn test_adc_abs() {
+        let instr = decode_instruction(ADC_ABS);
+        assert!(instr.is_some());
+        let instr = instr.unwrap();
+        assert_eq!(instr.op, OpCode::ADC);
+        assert_eq!(instr.mode, AddrMode::ABS);
+    }
+
+    #[test]
+    fn test_adc_abx() {
+        let instr = decode_instruction(ADC_ABX);
+        assert!(instr.is_some());
+        let instr = instr.unwrap();
+        assert_eq!(instr.op, OpCode::ADC);
+        assert_eq!(instr.mode, AddrMode::ABX);
+    }
+
+    #[test]
+    fn test_adc_aby() {
+        let instr = decode_instruction(ADC_ABY);
+        assert!(instr.is_some());
+        let instr = instr.unwrap();
+        assert_eq!(instr.op, OpCode::ADC);
+        assert_eq!(instr.mode, AddrMode::ABY);
+    }
+
+    #[test]
+    fn test_adc_inx() {
+        let instr = decode_instruction(ADC_INX);
+        assert!(instr.is_some());
+        let instr = instr.unwrap();
+        assert_eq!(instr.op, OpCode::ADC);
+        assert_eq!(instr.mode, AddrMode::INX);
+    }
+
+    #[test]
+    fn test_adc_iny() {
+        let instr = decode_instruction(ADC_INY);
+        assert!(instr.is_some());
+        let instr = instr.unwrap();
+        assert_eq!(instr.op, OpCode::ADC);
+        assert_eq!(instr.mode, AddrMode::INY);
     }
 }
