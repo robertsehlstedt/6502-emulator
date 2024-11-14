@@ -1,6 +1,7 @@
 mod memory;
 mod cpu;
 mod addressmode;
+mod instruction_hex;
 mod instruction;
 mod flag;
 mod operation;
