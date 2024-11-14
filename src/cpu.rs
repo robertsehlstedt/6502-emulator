@@ -1,29 +1,33 @@
 use crate::memory::Memory;
-use crate::instruction::get_instruction;
+use crate::instruction::decode_instruction;
 use crate::addressmode::{AddressModeData, get_addressmode};
 use crate::operation::{OperationData, get_operation};
 use crate::flag::Flag;
 
+const PC_INIT_VALUE: u16 = 0xfffc;
+const SP_INIT_VALUE: u8 = 0x00;
+
 #[derive(Debug, Default)]
 pub struct CPU {
-    pub pc: u16,
-    pub sp: u8,
+    pub pc: u16,    // Program counter
+    pub sp: u8,     // Stack pointer
 
-    a: u8,
-    x: u8,
-    y: u8,
-    p: u8,
+    pub a: u8,      // Accumulator register
+    pub x: u8,      // X register
+    pub y: u8,      // Y register
+
+    p: u8,          // Status register
 }
 
 impl CPU {
     pub fn reset(&mut self) {
-        self.pc = 0xfffc;
-        self.sp = 0x00;
+        self.pc = PC_INIT_VALUE;
+        self.sp = SP_INIT_VALUE;
 
         self.a = 0;
         self.x = 0;
         self.y = 0;
-        self.p = 1;
+        self.p = 0;
     }
 
     pub fn execute(&mut self, memory: &mut Memory, n_instr: u32) -> u32{
@@ -32,7 +36,7 @@ impl CPU {
 
         while rem_instr > 0 {
             let next = memory[self.pc.into()];
-            let instr = get_instruction(next).unwrap();
+            let instr = decode_instruction(next).unwrap();
 
             println!("{:?}", instr);
 
@@ -68,8 +72,77 @@ impl CPU {
         n_cycles
     }
 
+    pub fn set_flag(&mut self, flag: Flag) {
+        self.p |= flag.value();
+    }
+
+    pub fn clear_flag(&mut self, flag: Flag) {
+        self.p &= !flag.value();
+    }
+
     pub fn is_flag_set(&self, flag: Flag) -> bool {
         self.p & flag.value() != 0
     }
 
+}
+
+#[cfg(test)]
+mod tests {
+    use std::u8;
+
+    use super::*;
+
+    #[test]
+    fn test_reset() {
+        let mut cpu = CPU {
+            pc: !PC_INIT_VALUE,
+            sp: !SP_INIT_VALUE,
+            a: u8::MAX,
+            x: u8::MAX,
+            y: u8::MAX,
+            p: u8::MAX,
+        };
+        cpu.reset();
+        assert_eq!(cpu.pc, PC_INIT_VALUE);
+        assert_eq!(cpu.sp, SP_INIT_VALUE);
+        assert_eq!(cpu.a, 0);
+        assert_eq!(cpu.x, 0);
+        assert_eq!(cpu.y, 0);
+        assert_eq!(cpu.p, 0);
+    }
+
+    #[test]
+    fn test_set_flag() {
+        let mut cpu = CPU::default();
+        cpu.p = 0b0000_0000;
+        cpu.set_flag(Flag::C);
+        assert_eq!(cpu.p, 0b0000_0001)
+    }
+
+    #[test]
+    fn test_clear_flag() {
+        let mut cpu = CPU::default();
+        cpu.p = 0b0000_0001;
+        cpu.clear_flag(Flag::C);
+        assert_eq!(cpu.p, 0b0000_0000);
+    }
+
+    #[test]
+    fn test_is_flag_set() {
+        let mut cpu = CPU::default();
+        cpu.p = 0b0000_0000;
+        assert!(!cpu.is_flag_set(Flag::C));
+        cpu.p = 0b0000_0001;
+        assert!(cpu.is_flag_set(Flag::C));
+    }
+
+    #[test]
+    fn test_clc() {
+        let mut mem = Memory::new();
+        let mut cpu = CPU::default();
+        mem[cpu.pc as usize] = 0x18;
+        cpu.p = 0b0000_0001;
+        cpu.execute(&mut mem, 1);
+        assert_eq!(cpu.p, 0b0000_0000);
+    }
 }
