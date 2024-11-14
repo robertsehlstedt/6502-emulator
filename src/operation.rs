@@ -2,7 +2,7 @@ use crate::memory::Memory;
 use crate::flag::Flag;
 
 // See http://www.6502.org/tutorials/6502opcodes.html
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum OpCode {
     ADC, AND, ASL, BCC, BCS,
     BEQ, BIT, BMI, BNE, BPL,

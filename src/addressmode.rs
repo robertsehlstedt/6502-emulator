@@ -1,7 +1,7 @@
 use crate::memory::Memory;
 
 // See https://www.nesdev.org/obelisk-6502-guide/addressing.html
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum AddrMode {
     IMP, ACC, IMM, ZPG, ZPX,
     ZPY, REL, ABS, ABX, ABY,
