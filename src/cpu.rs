@@ -17,7 +17,7 @@ pub struct Cpu<V> {
     pub pc: u16,
     pub sp: u8,
 
-    _v: core::marker::PhantomData<V>,
+    _variant: core::marker::PhantomData<V>,
 }
 
 impl<V: Variant> Cpu<V> {
@@ -26,7 +26,7 @@ impl<V: Variant> Cpu<V> {
             reg: RegisterState::default(),
             pc: 0,
             sp: 0,
-            _v: core::marker::PhantomData::<V>,
+            _variant: core::marker::PhantomData::<V>,
         }
     }
 
