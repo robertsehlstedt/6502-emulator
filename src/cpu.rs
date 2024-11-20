@@ -1,4 +1,6 @@
-use crate::{registers::RegisterState, Variant, instruction::{AddressingMode, OperationInput, Instruction}};
+use crate::registers::RegisterState;
+use crate::Variant;
+use crate::instruction::{AddressingMode, OperationInput, Instruction};
 
 const STACK_BASE:       u8 = 0x01;
 const VECTOR_BASE:      u8 = 0xFF;
