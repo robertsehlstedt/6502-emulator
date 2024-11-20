@@ -204,9 +204,9 @@ impl<B: Bus, V: Variant> CpuWithBus<'_, B, V> {
 
             (InstructionCode::DEC, OperationInput::ADR(addr)) => self.dec(addr),
 
-            (InstructionCode::DEX, OperationInput::IMP) => todo!(),
+            (InstructionCode::DEX, OperationInput::IMP) => self.dex(),
 
-            (InstructionCode::DEY, OperationInput::IMP) => todo!(),
+            (InstructionCode::DEY, OperationInput::IMP) => self.dey(),
 
             (InstructionCode::EOR, OperationInput::IMM(val)) => todo!(),
             (InstructionCode::EOR, OperationInput::ADR(addr)) => todo!(),
@@ -367,6 +367,14 @@ impl<B: Bus, V: Variant> CpuWithBus<'_, B, V> {
         self.cpu.reg.update_nz_flags(result);
     }
 
+    fn dex(&mut self) {
+        self.cpu.reg.update_x(self.cpu.reg.get_x().wrapping_sub(1));
+    }
+
+    fn dey(&mut self) {
+        self.cpu.reg.update_y(self.cpu.reg.get_y().wrapping_sub(1));
+    }
+
     fn inc(&mut self, addr: u16) {
         let n = self.bus.read(addr);
         let result = n.wrapping_add(1);
@@ -522,6 +530,22 @@ mod tests {
         let before = cwb.bus.read(0);
         cwb.dec(0);
         assert_eq!(cwb.bus.read(0), before.wrapping_sub(1));
+    }
+
+    #[test]
+    fn test_dex() {
+        let mut cwb = get_cpu();
+        let before = cwb.cpu.reg.get_x();
+        cwb.dex();
+        assert_eq!(cwb.cpu.reg.get_x(), before.wrapping_sub(1));
+    }
+
+    #[test]
+    fn test_dey() {
+        let mut cwb = get_cpu();
+        let before = cwb.cpu.reg.get_y();
+        cwb.dey();
+        assert_eq!(cwb.cpu.reg.get_y(), before.wrapping_sub(1));
     }
 
     #[test]
