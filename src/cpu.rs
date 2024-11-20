@@ -166,6 +166,7 @@ impl<B: Bus, V: Variant> CpuWithBus<'_, B, V> {
                 self.inc(addr);
             }
             (INX, _) => self.inx(),
+            (INY, _) => self.iny(),
             _ => panic!()
 
         }
@@ -187,6 +188,10 @@ impl<B: Bus, V: Variant> CpuWithBus<'_, B, V> {
 
     fn inx(&mut self) {
         self.cpu.reg.update_x(self.cpu.reg.get_x().wrapping_add(1));
+    }
+
+    fn iny(&mut self) {
+        self.cpu.reg.update_y(self.cpu.reg.get_y().wrapping_add(1));
     }
 
 }
