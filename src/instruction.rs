@@ -31,7 +31,7 @@ pub enum OperationInput {
 
 pub type Instruction = (InstructionCode, OperationInput);
 
-fn get_op_input(am: AddressingMode) -> OperationInput {
+pub fn get_op_input(am: AddressingMode) -> OperationInput {
     match am {
         AddressingMode::ACC | AddressingMode::IMP => {
             OperationInput::IMP
