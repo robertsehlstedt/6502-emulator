@@ -165,6 +165,7 @@ impl<B: Bus, V: Variant> CpuWithBus<'_, B, V> {
                 let OperationInput::ADR(addr) = op_input else { panic!() };
                 self.inc(addr);
             }
+            (INX, _) => self.inx(),
             _ => panic!()
 
         }
@@ -182,6 +183,10 @@ impl<B: Bus, V: Variant> CpuWithBus<'_, B, V> {
         let result = n.wrapping_add(1);
         self.bus.write(addr, result);
         self.cpu.reg.update_nz_flags(result);
+    }
+
+    fn inx(&mut self) {
+        self.cpu.reg.update_x(self.cpu.reg.get_x().wrapping_add(1));
     }
 
 }
