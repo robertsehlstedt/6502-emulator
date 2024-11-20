@@ -107,7 +107,7 @@ impl<B: Bus, V: Variant> CpuWithBus<'_, B, V> {
                 OperationInput::IMM(self.take_u8_at_pc())
             }
             AddressingMode::ZPG => {
-                OperationInput::ADR(0)
+                OperationInput::ADR(self.take_u8_at_pc() as u16)
             }
             AddressingMode::ZPX => {
                 OperationInput::ADR(0)
