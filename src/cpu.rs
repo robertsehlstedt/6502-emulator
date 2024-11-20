@@ -165,25 +165,25 @@ impl<B: Bus, V: Variant> CpuWithBus<'_, B, V> {
             (InstructionCode::ASL, OperationInput::IMP) => todo!(),
             (InstructionCode::ASL, OperationInput::ADR(val)) => todo!(),
 
-            (InstructionCode::BCC, OperationInput::REL(offset)) => todo!(),
+            (InstructionCode::BCC, OperationInput::REL(offset)) => self.bcc(offset),
             
-            (InstructionCode::BCS, OperationInput::REL(offset)) => todo!(),
+            (InstructionCode::BCS, OperationInput::REL(offset)) => self.bcs(offset),
 
-            (InstructionCode::BEQ, OperationInput::REL(offset)) => todo!(),
+            (InstructionCode::BEQ, OperationInput::REL(offset)) => self.beq(offset),
 
             (InstructionCode::BIT, OperationInput::REL(offset)) => todo!(),
 
-            (InstructionCode::BMI, OperationInput::REL(offset)) => todo!(),
+            (InstructionCode::BMI, OperationInput::REL(offset)) => self.bmi(offset),
 
-            (InstructionCode::BNE, OperationInput::REL(offset)) => todo!(),
+            (InstructionCode::BNE, OperationInput::REL(offset)) => self.bne(offset),
 
-            (InstructionCode::BPL, OperationInput::REL(offset)) => todo!(),
+            (InstructionCode::BPL, OperationInput::REL(offset)) => self.bpl(offset),
 
             (InstructionCode::BRK, OperationInput::REL(offset)) => todo!(),
 
-            (InstructionCode::BVC, OperationInput::REL(offset)) => todo!(),
+            (InstructionCode::BVC, OperationInput::REL(offset)) => self.bvc(offset),
 
-            (InstructionCode::BVS, OperationInput::REL(offset)) => todo!(),
+            (InstructionCode::BVS, OperationInput::REL(offset)) => self.bvs(offset),
 
             (InstructionCode::CLC, OperationInput::IMP) => self.clc(),
 
@@ -288,6 +288,62 @@ impl<B: Bus, V: Variant> CpuWithBus<'_, B, V> {
         }
     }
 
+    fn bcc(&mut self, offset: u16) {
+        if (!self.cpu.reg.c) {
+            let addr = self.cpu.pc.wrapping_add(offset);
+            self.cpu.pc = addr;
+        }
+    }
+
+    fn bcs(&mut self, offset: u16) {
+        if (self.cpu.reg.c) {
+            let addr = self.cpu.pc.wrapping_add(offset);
+            self.cpu.pc = addr;
+        }
+    }
+
+    fn beq(&mut self, offset: u16) {
+        if (self.cpu.reg.z) {
+            let addr = self.cpu.pc.wrapping_add(offset);
+            self.cpu.pc = addr;
+        }
+    }
+
+    fn bmi(&mut self, offset: u16) {
+        if (self.cpu.reg.n) {
+            let addr = self.cpu.pc.wrapping_add(offset);
+            self.cpu.pc = addr;
+        }
+    }
+
+    fn bne(&mut self, offset: u16) {
+        if (!self.cpu.reg.z) {
+            let addr = self.cpu.pc.wrapping_add(offset);
+            self.cpu.pc = addr;
+        }
+    }
+
+    fn bpl(&mut self, offset: u16) {
+        if (!self.cpu.reg.n) {
+            let addr = self.cpu.pc.wrapping_add(offset);
+            self.cpu.pc = addr;
+        }
+    }
+
+    fn bvc(&mut self, offset: u16) {
+        if (!self.cpu.reg.v) {
+            let addr = self.cpu.pc.wrapping_add(offset);
+            self.cpu.pc = addr;
+        }
+    }
+
+    fn bvs(&mut self, offset: u16) {
+        if (self.cpu.reg.v) {
+            let addr = self.cpu.pc.wrapping_add(offset);
+            self.cpu.pc = addr;
+        }
+    }
+
     fn clc(&mut self) {
         self.cpu.reg.c = false;
     }
@@ -354,6 +410,78 @@ mod tests {
         let cpu = Box::leak(Box::new(Cpu::new(MockVariant)));
         let bus = Box::leak(Box::new(MockBus { memory: [0; u16::MAX as usize] }));
         CpuWithBus {cpu: cpu, bus: bus}
+    }
+
+    #[test]
+    fn test_bcc() {
+        let mut cwb = get_cpu();
+        cwb.cpu.reg.c = false;
+        let before = cwb.cpu.pc;
+        cwb.bcc(1);
+        assert_eq!(cwb.cpu.pc, before.wrapping_add(1));
+    }
+
+    #[test]
+    fn test_bcs() {
+        let mut cwb = get_cpu();
+        cwb.cpu.reg.c = true;
+        let before = cwb.cpu.pc;
+        cwb.bcs(1);
+        assert_eq!(cwb.cpu.pc, before.wrapping_add(1));
+    }
+
+    #[test]
+    fn test_beq() {
+        let mut cwb = get_cpu();
+        cwb.cpu.reg.z = true;
+        let before = cwb.cpu.pc;
+        cwb.beq(1);
+        assert_eq!(cwb.cpu.pc, before.wrapping_add(1));
+    }
+
+    #[test]
+    fn test_bmi() {
+        let mut cwb = get_cpu();
+        cwb.cpu.reg.n = true;
+        let before = cwb.cpu.pc;
+        cwb.bmi(1);
+        assert_eq!(cwb.cpu.pc, before.wrapping_add(1));
+    }
+
+    #[test]
+    fn test_bne() {
+        let mut cwb = get_cpu();
+        cwb.cpu.reg.z = false;
+        let before = cwb.cpu.pc;
+        cwb.bne(1);
+        assert_eq!(cwb.cpu.pc, before.wrapping_add(1));
+    }
+
+    #[test]
+    fn test_bpl() {
+        let mut cwb = get_cpu();
+        cwb.cpu.reg.n = false;
+        let before = cwb.cpu.pc;
+        cwb.bpl(1);
+        assert_eq!(cwb.cpu.pc, before.wrapping_add(1));
+    }
+
+    #[test]
+    fn test_bvc() {
+        let mut cwb = get_cpu();
+        cwb.cpu.reg.v = false;
+        let before = cwb.cpu.pc;
+        cwb.bvc(1);
+        assert_eq!(cwb.cpu.pc, before.wrapping_add(1));
+    }
+
+    #[test]
+    fn test_bvs() {
+        let mut cwb = get_cpu();
+        cwb.cpu.reg.v = true;
+        let before = cwb.cpu.pc;
+        cwb.bvs(1);
+        assert_eq!(cwb.cpu.pc, before.wrapping_add(1));
     }
 
     #[test]
