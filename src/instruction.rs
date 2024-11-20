@@ -29,4 +29,4 @@ pub enum OperationInput {
     ADR(u16),
 }
 
-pub type Instruction = (InstructionCode, OperationInput);
+pub type Instruction = (InstructionCode, AddressingMode, OperationInput);

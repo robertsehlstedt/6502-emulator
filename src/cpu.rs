@@ -1,6 +1,6 @@
 use crate::registers::RegisterState;
 use crate::Variant;
-use crate::instruction::{AddressingMode, OperationInput, Instruction};
+use crate::instruction::{AddressingMode, OperationInput, InstructionCode::*, Instruction};
 
 const STACK_BASE:       u8 = 0x01;
 const VECTOR_BASE:      u8 = 0xFF;
@@ -95,7 +95,7 @@ impl<B: Bus, V: Variant> CpuWithBus<'_, B, V> {
     fn step(&mut self) {
         let (instr_code, addr_mode) = V::decode(self.take_u8_at_pc()).unwrap();
         let op_input = self.execute_addressing(addr_mode);
-        self.execute_operation((instr_code, op_input));
+        self.execute_operation((instr_code, addr_mode, op_input));
     }
 
     fn execute_addressing(&mut self, am: AddressingMode) -> OperationInput {
@@ -155,6 +155,33 @@ impl<B: Bus, V: Variant> CpuWithBus<'_, B, V> {
     }
 
     fn execute_operation(&mut self, instruction: Instruction) {
+        let (instr_code, addr_mode, op_input) = instruction;
+        match (instr_code, addr_mode) {
+            (DEC, _) => {
+                let OperationInput::ADR(addr) = op_input else { panic!() };
+                self.dec(addr);
+            }
+            (INC, _) => {
+                let OperationInput::ADR(addr) = op_input else { panic!() };
+                self.inc(addr);
+            }
+            _ => panic!()
 
+        }
     }
+
+    fn dec(&mut self, addr: u16) {
+        let n = self.bus.read(addr);
+        let result = n.wrapping_sub(1);
+        self.bus.write(addr, result);
+        self.cpu.reg.update_nz_flags(result);
+    }
+
+    fn inc(&mut self, addr: u16) {
+        let n = self.bus.read(addr);
+        let result = n.wrapping_add(1);
+        self.bus.write(addr, result);
+        self.cpu.reg.update_nz_flags(result);
+    }
+
 }
