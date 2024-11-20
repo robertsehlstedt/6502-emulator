@@ -202,7 +202,7 @@ impl<B: Bus, V: Variant> CpuWithBus<'_, B, V> {
             (InstructionCode::CPY, OperationInput::IMM(val)) => todo!(),
             (InstructionCode::CPY, OperationInput::ADR(addr)) => todo!(),
 
-            (InstructionCode::DEC, OperationInput::ADR(addr)) => todo!(),
+            (InstructionCode::DEC, OperationInput::ADR(addr)) => self.dec(addr),
 
             (InstructionCode::DEX, OperationInput::IMP) => todo!(),
 
@@ -211,12 +211,11 @@ impl<B: Bus, V: Variant> CpuWithBus<'_, B, V> {
             (InstructionCode::EOR, OperationInput::IMM(val)) => todo!(),
             (InstructionCode::EOR, OperationInput::ADR(addr)) => todo!(),
 
-            (InstructionCode::INC, OperationInput::IMM(val)) => todo!(),
-            (InstructionCode::INC, OperationInput::ADR(addr)) => todo!(),
+            (InstructionCode::INC, OperationInput::ADR(addr)) => self.inc(addr),
 
-            (InstructionCode::INX, OperationInput::IMP) => todo!(),
+            (InstructionCode::INX, OperationInput::IMP) => self.inx(),
 
-            (InstructionCode::INY, OperationInput::IMP) => todo!(),
+            (InstructionCode::INY, OperationInput::IMP) => self.iny(),
 
             (InstructionCode::JMP, OperationInput::IMM(val)) => todo!(),
             (InstructionCode::JMP, OperationInput::ADR(addr)) => todo!(),
@@ -327,4 +326,97 @@ impl<B: Bus, V: Variant> CpuWithBus<'_, B, V> {
         self.cpu.reg.update_y(self.cpu.reg.get_y().wrapping_add(1));
     }
 
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    struct MockBus {
+        memory: [u8; u16::MAX as usize],
+    }
+    impl Bus for MockBus {
+        fn read(&mut self, addr: u16) -> u8 { self.memory[addr as usize] }
+        fn write(&mut self, addr: u16, value: u8) { self.memory[addr as usize] = value }
+    }
+
+    struct MockVariant;
+    impl Variant for MockVariant {
+        fn decode(opcode: u8) -> Option<(
+            crate::instruction::InstructionCode,
+            crate::instruction::AddressingMode
+        )> {
+            None
+        }
+    }
+
+    fn get_cpu() -> CpuWithBus<'static, MockBus, MockVariant> {
+        let cpu = Box::leak(Box::new(Cpu::new(MockVariant)));
+        let bus = Box::leak(Box::new(MockBus { memory: [0; u16::MAX as usize] }));
+        CpuWithBus {cpu: cpu, bus: bus}
+    }
+
+    #[test]
+    fn test_clc() {
+        let mut cwb = get_cpu();
+        cwb.cpu.reg.c = true;
+        cwb.clc();
+        assert!(!cwb.cpu.reg.c);
+    }
+
+    #[test]
+    fn test_cld() {
+        let mut cwb = get_cpu();
+        cwb.cpu.reg.d = true;
+        cwb.cld();
+        assert!(!cwb.cpu.reg.d);
+    }
+
+    #[test]
+    fn test_cli() {
+        let mut cwb = get_cpu();
+        cwb.cpu.reg.i = true;
+        cwb.cli();
+        assert!(!cwb.cpu.reg.i);
+    }
+
+    #[test]
+    fn test_clv() {
+        let mut cwb = get_cpu();
+        cwb.cpu.reg.v = true;
+        cwb.clv();
+        assert!(!cwb.cpu.reg.v);
+    }
+
+    #[test]
+    fn test_dec() {
+        let mut cwb = get_cpu();
+        let before = cwb.bus.read(0);
+        cwb.dec(0);
+        assert_eq!(cwb.bus.read(0), before.wrapping_sub(1));
+    }
+
+    #[test]
+    fn test_inc() {
+        let mut cwb = get_cpu();
+        let before = cwb.bus.read(0);
+        cwb.inc(0);
+        assert_eq!(cwb.bus.read(0), before.wrapping_add(1));
+    }
+
+    #[test]
+    fn test_inx() {
+        let mut cwb = get_cpu();
+        let before = cwb.cpu.reg.get_x();
+        cwb.inx();
+        assert_eq!(cwb.cpu.reg.get_x(), before.wrapping_add(1));
+    }
+
+    #[test]
+    fn test_iny() {
+        let mut cwb = get_cpu();
+        let before = cwb.cpu.reg.get_y();
+        cwb.iny();
+        assert_eq!(cwb.cpu.reg.get_y(), before.wrapping_add(1));
+    }
 }
