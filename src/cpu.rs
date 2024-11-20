@@ -156,12 +156,136 @@ impl<B: Bus, V: Variant> CpuWithBus<'_, B, V> {
 
     fn execute_operation(&mut self, instruction: Instruction) {
         match instruction  {
-            (InstructionCode::DEC, OperationInput::ADR(addr)) => self.dec(addr),
-            (InstructionCode::INC, OperationInput::ADR(addr)) => self.inc(addr),
-            (InstructionCode::INX, OperationInput::IMP) => self.inx(),
-            (InstructionCode::INY, OperationInput::IMP) => self.iny(),
-            _ => panic!()
+            (InstructionCode::ADC, OperationInput::IMM(_)) => todo!(),
+            (InstructionCode::ADC, OperationInput::ADR(_)) => todo!(),
 
+            (InstructionCode::AND, OperationInput::IMM(_)) => todo!(),
+            (InstructionCode::AND, OperationInput::ADR(_)) => todo!(),
+
+            (InstructionCode::ASL, OperationInput::IMP) => todo!(),
+            (InstructionCode::ASL, OperationInput::ADR(_)) => todo!(),
+
+            (InstructionCode::BCC, OperationInput::REL(_)) => todo!(),
+            
+            (InstructionCode::BCS, OperationInput::REL(_)) => todo!(),
+
+            (InstructionCode::BEQ, OperationInput::REL(_)) => todo!(),
+
+            (InstructionCode::BIT, OperationInput::REL(_)) => todo!(),
+
+            (InstructionCode::BMI, OperationInput::REL(_)) => todo!(),
+
+            (InstructionCode::BNE, OperationInput::REL(_)) => todo!(),
+
+            (InstructionCode::BPL, OperationInput::REL(_)) => todo!(),
+
+            (InstructionCode::BRK, OperationInput::REL(_)) => todo!(),
+
+            (InstructionCode::BVC, OperationInput::REL(_)) => todo!(),
+
+            (InstructionCode::BVS, OperationInput::REL(_)) => todo!(),
+
+            (InstructionCode::CLC, OperationInput::IMP) => todo!(),
+
+            (InstructionCode::CLD, OperationInput::IMP) => todo!(),
+
+            (InstructionCode::CLI, OperationInput::IMP) => todo!(),
+
+            (InstructionCode::CLV, OperationInput::IMP) => todo!(),
+
+            (InstructionCode::CMP, OperationInput::IMM(_)) => todo!(),
+            (InstructionCode::CMP, OperationInput::ADR(_)) => todo!(),
+
+            (InstructionCode::CPX, OperationInput::IMM(_)) => todo!(),
+            (InstructionCode::CPX, OperationInput::ADR(_)) => todo!(),
+
+            (InstructionCode::CPY, OperationInput::IMM(_)) => todo!(),
+            (InstructionCode::CPY, OperationInput::ADR(_)) => todo!(),
+
+            (InstructionCode::DEC, OperationInput::ADR(_)) => todo!(),
+
+            (InstructionCode::DEX, OperationInput::IMP) => todo!(),
+
+            (InstructionCode::DEY, OperationInput::IMP) => todo!(),
+
+            (InstructionCode::EOR, OperationInput::IMM(_)) => todo!(),
+            (InstructionCode::EOR, OperationInput::ADR(_)) => todo!(),
+
+            (InstructionCode::INC, OperationInput::IMM(_)) => todo!(),
+            (InstructionCode::INC, OperationInput::ADR(_)) => todo!(),
+
+            (InstructionCode::INX, OperationInput::IMP) => todo!(),
+
+            (InstructionCode::INY, OperationInput::IMP) => todo!(),
+
+            (InstructionCode::JMP, OperationInput::IMM(_)) => todo!(),
+            (InstructionCode::JMP, OperationInput::ADR(_)) => todo!(),
+
+            (InstructionCode::JSR, OperationInput::ADR(_)) => todo!(),
+
+            (InstructionCode::LDA, OperationInput::IMM(_)) => todo!(),
+            (InstructionCode::LDA, OperationInput::ADR(_)) => todo!(),
+
+            (InstructionCode::LDX, OperationInput::IMM(_)) => todo!(),
+            (InstructionCode::LDX, OperationInput::ADR(_)) => todo!(),
+
+            (InstructionCode::LDY, OperationInput::IMM(_)) => todo!(),
+            (InstructionCode::LDY, OperationInput::ADR(_)) => todo!(),
+
+            (InstructionCode::LSR, OperationInput::IMP) => todo!(),
+            (InstructionCode::LSR, OperationInput::ADR(_)) => todo!(),
+
+            (InstructionCode::NOP, OperationInput::IMP) => todo!(),
+
+            (InstructionCode::ORA, OperationInput::IMM(_)) => todo!(),
+            (InstructionCode::ORA, OperationInput::ADR(_)) => todo!(),
+
+            (InstructionCode::PHA, OperationInput::IMP) => todo!(),
+
+            (InstructionCode::PHP, OperationInput::IMP) => todo!(),
+
+            (InstructionCode::PLA, OperationInput::IMP) => todo!(),
+
+            (InstructionCode::PLP, OperationInput::IMP) => todo!(),
+
+            (InstructionCode::ROL, OperationInput::IMP) => todo!(),
+            (InstructionCode::ROL, OperationInput::ADR(_)) => todo!(),
+
+            (InstructionCode::ROR, OperationInput::IMP) => todo!(),
+            (InstructionCode::ROR, OperationInput::ADR(_)) => todo!(),
+
+            (InstructionCode::RTI, OperationInput::IMP) => todo!(),
+
+            (InstructionCode::RTS, OperationInput::IMP) => todo!(),
+
+            (InstructionCode::SBC, OperationInput::IMM(_)) => todo!(),
+            (InstructionCode::SBC, OperationInput::ADR(_)) => todo!(),
+
+            (InstructionCode::SEC, OperationInput::IMP) => todo!(),
+
+            (InstructionCode::SED, OperationInput::IMP) => todo!(),
+
+            (InstructionCode::SEI, OperationInput::IMP) => todo!(),
+
+            (InstructionCode::STA, OperationInput::ADR(_)) => todo!(),
+
+            (InstructionCode::STX, OperationInput::ADR(_)) => todo!(),
+
+            (InstructionCode::STY, OperationInput::ADR(_)) => todo!(),
+
+            (InstructionCode::TAX, OperationInput::IMP) => todo!(),
+
+            (InstructionCode::TAY, OperationInput::IMP) => todo!(),
+
+            (InstructionCode::TSX, OperationInput::IMP) => todo!(),
+
+            (InstructionCode::TXA, OperationInput::IMP) => todo!(),
+
+            (InstructionCode::TXS, OperationInput::IMP) => todo!(),
+
+            (InstructionCode::TYA, OperationInput::IMP) => todo!(),
+
+            _illegal => panic!(),
         }
     }
 
