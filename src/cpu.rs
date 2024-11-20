@@ -104,7 +104,8 @@ impl<B: Bus, V: Variant> CpuWithBus<'_, B, V> {
                 OperationInput::IMP
             }
             AddressingMode::IMM => {
-                OperationInput::IMM(self.take_u8_at_pc())
+                let val = self.take_u8_at_pc();
+                OperationInput::IMM(val)
             }
             AddressingMode::ZPG => {
                 let addr = self.take_u8_at_pc() as u16;
