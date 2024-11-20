@@ -1,6 +1,6 @@
 use crate::registers::RegisterState;
 use crate::Variant;
-use crate::instruction::{AddressingMode, OperationInput, InstructionCode::*, Instruction};
+use crate::instruction::{AddressingMode, OperationInput, InstructionCode, Instruction};
 
 const STACK_BASE:       u8 = 0x01;
 const VECTOR_BASE:      u8 = 0xFF;
@@ -95,7 +95,7 @@ impl<B: Bus, V: Variant> CpuWithBus<'_, B, V> {
     fn step(&mut self) {
         let (instr_code, addr_mode) = V::decode(self.take_u8_at_pc()).unwrap();
         let op_input = self.execute_addressing(addr_mode);
-        self.execute_operation((instr_code, addr_mode, op_input));
+        self.execute_operation((instr_code, op_input));
     }
 
     fn execute_addressing(&mut self, am: AddressingMode) -> OperationInput {
@@ -155,18 +155,11 @@ impl<B: Bus, V: Variant> CpuWithBus<'_, B, V> {
     }
 
     fn execute_operation(&mut self, instruction: Instruction) {
-        let (instr_code, addr_mode, op_input) = instruction;
-        match (instr_code, addr_mode) {
-            (DEC, _) => {
-                let OperationInput::ADR(addr) = op_input else { panic!() };
-                self.dec(addr);
-            }
-            (INC, _) => {
-                let OperationInput::ADR(addr) = op_input else { panic!() };
-                self.inc(addr);
-            }
-            (INX, _) => self.inx(),
-            (INY, _) => self.iny(),
+        match instruction  {
+            (InstructionCode::DEC, OperationInput::ADR(addr)) => self.dec(addr),
+            (InstructionCode::INC, OperationInput::ADR(addr)) => self.inc(addr),
+            (InstructionCode::INX, OperationInput::IMP) => self.inx(),
+            (InstructionCode::INY, OperationInput::IMP) => self.iny(),
             _ => panic!()
 
         }
