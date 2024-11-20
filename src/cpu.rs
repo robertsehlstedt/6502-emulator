@@ -260,11 +260,11 @@ impl<B: Bus, V: Variant> CpuWithBus<'_, B, V> {
             (InstructionCode::SBC, OperationInput::IMM(val)) => todo!(),
             (InstructionCode::SBC, OperationInput::ADR(addr)) => todo!(),
 
-            (InstructionCode::SEC, OperationInput::IMP) => todo!(),
+            (InstructionCode::SEC, OperationInput::IMP) => self.sec(),
 
-            (InstructionCode::SED, OperationInput::IMP) => todo!(),
+            (InstructionCode::SED, OperationInput::IMP) => self.sed(),
 
-            (InstructionCode::SEI, OperationInput::IMP) => todo!(),
+            (InstructionCode::SEI, OperationInput::IMP) => self.sei(),
 
             (InstructionCode::STA, OperationInput::ADR(addr)) => todo!(),
 
@@ -408,6 +408,18 @@ impl<B: Bus, V: Variant> CpuWithBus<'_, B, V> {
     fn plp(&mut self) {
         let status = self.stack_pop();
         self.cpu.reg.set_status(status);
+    }
+
+    fn sec(&mut self) {
+        self.cpu.reg.c = true;
+    }
+
+    fn sed(&mut self) {
+        self.cpu.reg.d = true;
+    }
+
+    fn sei(&mut self) {
+        self.cpu.reg.i = true;
     }
 
 }
@@ -622,5 +634,26 @@ mod tests {
         cwb.stack_push(1);
         cwb.plp();
         assert!(cwb.cpu.reg.c);
+    }
+
+    #[test]
+    fn test_sec() {
+        let mut cwb = get_cpu();
+        cwb.sec();
+        assert!(cwb.cpu.reg.c);
+    }
+
+    #[test]
+    fn test_sed() {
+        let mut cwb = get_cpu();
+        cwb.sed();
+        assert!(cwb.cpu.reg.d);
+    }
+
+    #[test]
+    fn test_sei() {
+        let mut cwb = get_cpu();
+        cwb.sei();
+        assert!(cwb.cpu.reg.i);
     }
 }
