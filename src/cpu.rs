@@ -1,148 +1,84 @@
-use crate::memory::Memory;
-use crate::instruction::decode_instruction;
-use crate::addressmode::{AddressModeData, get_addressmode};
-use crate::operation::{OperationData, get_operation};
-use crate::flag::Flag;
+use crate::{registers::RegisterState, Variant};
 
-const PC_INIT_VALUE: u16 = 0xfffc;
-const SP_INIT_VALUE: u8 = 0x00;
+const STACK_BASE:       u8 = 0x01;
+const VECTOR_BASE:      u8 = 0xFF;
+const IRQ_BRK_VECTOR:   u8 = 0xFE;
+const RESET_VECTOR:     u8 = 0xFC;
+const NMI_VECTOR:       u8 = 0xFA;
 
-#[derive(Debug, Default)]
-pub struct CPU {
-    pub pc: u16,    // Program counter
-    pub sp: u8,     // Stack pointer
-
-    pub a: u8,      // Accumulator register
-    pub x: u8,      // X register
-    pub y: u8,      // Y register
-
-    p: u8,          // Status register
+pub trait Bus {
+    fn read(&mut self, addr: u16) -> u8;
+    fn write(&mut self, addr: u16, value: u8);
 }
 
-impl CPU {
-    pub fn reset(&mut self) {
-        self.pc = PC_INIT_VALUE;
-        self.sp = SP_INIT_VALUE;
+#[derive(Default, Clone, Copy)]
+pub struct Cpu<V> {
+    pub reg: RegisterState,
+    pub pc: u16,
+    pub sp: u8,
 
-        self.a = 0;
-        self.x = 0;
-        self.y = 0;
-        self.p = 0;
-    }
+    _v: core::marker::PhantomData<V>,
+}
 
-    pub fn execute(&mut self, memory: &mut Memory, n_instr: u32) -> u32{
-        let mut rem_instr = n_instr;
-        let mut n_cycles: u32 = 0;
-
-        while rem_instr > 0 {
-            let next = memory[self.pc.into()];
-            let instr = decode_instruction(next).unwrap();
-
-            println!("{:?}", instr);
-
-            self.pc += 1; // Move ahead one step before addressing mode!
-            
-            let addr_output;
-            { // Perform addressing
-                let mode = get_addressmode(instr.mode);
-                let mut mode_data = AddressModeData {
-                    mem: memory,
-                    pc: &mut self.pc,
-                    n_cycles: 0,
-                    data: None,
-                };
-                mode(&mut mode_data);
-                addr_output = mode_data.data;
-                n_cycles += mode_data.n_cycles as u32;
-            }
-            { // Perform operation
-                let op = get_operation(instr.op);
-                let mut op_data = OperationData {
-                    mem: memory,
-                    pc: &mut self.pc,
-                    flags: &mut self.p,
-                    n_cycles: 0,
-                    data: addr_output,
-                };
-                op(&mut op_data);
-                n_cycles += op_data.n_cycles as u32;
-            }
-            rem_instr -= 1;
+impl<V: Variant> Cpu<V> {
+    pub fn new(_: V) -> Self {
+        Cpu {
+            reg: RegisterState::default(),
+            pc: 0,
+            sp: 0,
+            _v: core::marker::PhantomData::<V>,
         }
-        n_cycles
     }
 
-    pub fn set_flag(&mut self, flag: Flag) {
-        self.p |= flag.value();
+    pub fn step(&mut self, bus: &mut impl Bus) {
+        CpuWithBus {cpu: self, bus}.step()
     }
 
-    pub fn clear_flag(&mut self, flag: Flag) {
-        self.p &= !flag.value();
+    pub fn reset(&mut self, bus: &mut impl Bus) {
+        CpuWithBus {cpu: self, bus}.reset()
     }
 
-    pub fn is_flag_set(&self, flag: Flag) -> bool {
-        self.p & flag.value() != 0
+    pub fn irq(&mut self, bus: &mut impl Bus) {
+        CpuWithBus {cpu: self, bus}.irq()
     }
 
+    pub fn nmi(&mut self, bus: &mut impl Bus) {
+        CpuWithBus {cpu: self, bus}.nmi()
+    }
 }
 
-#[cfg(test)]
-mod tests {
-    use std::u8;
+struct CpuWithBus<'c, B, V> {
+    cpu: &'c mut Cpu<V>,
+    bus: &'c mut B,
+}
 
-    use super::*;
-
-    #[test]
-    fn test_reset() {
-        let mut cpu = CPU {
-            pc: !PC_INIT_VALUE,
-            sp: !SP_INIT_VALUE,
-            a: u8::MAX,
-            x: u8::MAX,
-            y: u8::MAX,
-            p: u8::MAX,
-        };
-        cpu.reset();
-        assert_eq!(cpu.pc, PC_INIT_VALUE);
-        assert_eq!(cpu.sp, SP_INIT_VALUE);
-        assert_eq!(cpu.a, 0);
-        assert_eq!(cpu.x, 0);
-        assert_eq!(cpu.y, 0);
-        assert_eq!(cpu.p, 0);
+impl<B: Bus, V: Variant> CpuWithBus<'_, B, V> {
+    fn read_u16(&mut self, high: u8, low: u8) -> u16 {
+        let u16_low = u16::from_le_bytes([low, high]);
+        let u16_high = u16::from_le_bytes([low.wrapping_add(1), high]);
+        u16::from_le_bytes([self.bus.read(u16_low), self.bus.read(u16_high)])
     }
 
-    #[test]
-    fn test_set_flag() {
-        let mut cpu = CPU::default();
-        cpu.p = 0b0000_0000;
-        cpu.set_flag(Flag::C);
-        assert_eq!(cpu.p, 0b0000_0001)
+    fn take_u8_at_pc(&mut self) -> u8 {
+        let byte = self.bus.read(self.cpu.pc);
+        self.cpu.pc = self.cpu.pc.wrapping_add(1);
+        byte
     }
 
-    #[test]
-    fn test_clear_flag() {
-        let mut cpu = CPU::default();
-        cpu.p = 0b0000_0001;
-        cpu.clear_flag(Flag::C);
-        assert_eq!(cpu.p, 0b0000_0000);
+    fn take_u16_at_pc(&mut self) -> u16 {
+        u16::from_le_bytes([self.take_u8_at_pc(), self.take_u8_at_pc()])
     }
 
-    #[test]
-    fn test_is_flag_set() {
-        let mut cpu = CPU::default();
-        cpu.p = 0b0000_0000;
-        assert!(!cpu.is_flag_set(Flag::C));
-        cpu.p = 0b0000_0001;
-        assert!(cpu.is_flag_set(Flag::C));
+    fn reset(&mut self) {
+        self.cpu.reg.i = true;
+        self.cpu.sp = self.cpu.sp.wrapping_add(3);
+        self.cpu.pc = self.read_u16(VECTOR_BASE, RESET_VECTOR);
     }
+    
+    fn irq(&mut self) {}
+    fn nmi(&mut self) {}
 
-    #[test]
-    fn test_clc() {
-        let mut mem = Memory::new();
-        let mut cpu = CPU::default();
-        mem[cpu.pc as usize] = 0x18;
-        cpu.p = 0b0000_0001;
-        cpu.execute(&mut mem, 1);
-        assert_eq!(cpu.p, 0b0000_0000);
+    fn step(&mut self) {
+        
     }
 }

@@ -1,27 +1,28 @@
-mod memory;
-mod cpu;
-mod addressmode;
-mod instruction_hex;
-mod instruction;
-mod flag;
-mod operation;
+use cpu_6502::{cpu::{Bus, Cpu}, instruction::{AddressingMode, InstructionCode}, Variant};
 
-use memory::Memory;
-use cpu::CPU;
-use flag::Flag;
+struct MyCPU;
+impl Variant for MyCPU {
+    fn decode(opcode: u8) -> Option<(
+            cpu_6502::instruction::InstructionCode,
+            cpu_6502::instruction::AddressingMode
+        )> {
+        Some((InstructionCode::ADC, AddressingMode::IMM))
+    }
+}
+
+struct Memory;
+impl Bus for Memory {
+    fn read(&mut self, addr: u16) -> u8 {
+        todo!()
+    }
+
+    fn write(&mut self, addr: u16, value: u8) {
+        todo!()
+    }
+}
 
 fn main() {
-    let mut mem = Memory::new();
-    let mut cpu = CPU::default();
-
-    cpu.pc = 3;
-    mem[3] = 0x18;
-    println!("PC before: {}", cpu.pc);
-    println!("C before: {}", cpu.is_flag_set(Flag::C));
-
-    // cpu.reset();
-    cpu.execute(&mut mem, 1);
-
-    println!("C after: {}", cpu.is_flag_set(Flag::C));
-    println!("PC after: {}", cpu.pc);
+    let mut c = Cpu::new(MyCPU);
+    let mut m= Memory{};
+    c.step(&mut m);
 }
