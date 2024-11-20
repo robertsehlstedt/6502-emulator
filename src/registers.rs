@@ -1,8 +1,8 @@
 #[derive(Debug, Default, Clone, Copy)]
 pub struct RegisterState {
-    pub a: u8,
-    pub x: u8,
-    pub y: u8,
+    a: u8,
+    x: u8,
+    y: u8,
     
     pub c: bool,
     pub z: bool,
