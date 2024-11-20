@@ -136,7 +136,10 @@ impl<B: Bus, V: Variant> CpuWithBus<'_, B, V> {
                 OperationInput::ADR(addr)
             }
             AddressingMode::IND => {
-                OperationInput::ADR(0)
+                let low = self.take_u8_at_pc();
+                let high = self.take_u8_at_pc();
+                let addr = self.read_u16(high, low);
+                OperationInput::ADR(addr)
             }
             AddressingMode::INX => {
                 OperationInput::ADR(0)
