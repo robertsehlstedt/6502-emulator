@@ -8,7 +8,7 @@ pub struct RegisterState {
     pub z: bool,
     pub i: bool,
     pub d: bool,
-    pub o: bool,
+    pub v: bool,
     pub n: bool,
 }
 
