@@ -234,7 +234,7 @@ impl<B: Bus, V: Variant> CpuWithBus<'_, B, V> {
             (InstructionCode::LSR, OperationInput::IMP) => todo!(),
             (InstructionCode::LSR, OperationInput::ADR(addr)) => todo!(),
 
-            (InstructionCode::NOP, OperationInput::IMP) => todo!(),
+            (InstructionCode::NOP, OperationInput::IMP) => self.nop(),
 
             (InstructionCode::ORA, OperationInput::IMM(val)) => todo!(),
             (InstructionCode::ORA, OperationInput::ADR(addr)) => todo!(),
@@ -389,6 +389,8 @@ impl<B: Bus, V: Variant> CpuWithBus<'_, B, V> {
     fn iny(&mut self) {
         self.cpu.reg.update_y(self.cpu.reg.get_y().wrapping_add(1));
     }
+
+    fn nop(&self) { }
 
 }
 
