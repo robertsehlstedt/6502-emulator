@@ -124,13 +124,16 @@ impl<B: Bus, V: Variant> CpuWithBus<'_, B, V> {
                 OperationInput::REL(offset)
             }
             AddressingMode::ABS => {
-                OperationInput::ADR(0)
+                let addr = self.take_u16_at_pc();
+                OperationInput::ADR(addr)
             }
             AddressingMode::ABX => {
-                OperationInput::ADR(0)
+                let addr = self.take_u16_at_pc().wrapping_add(self.cpu.reg.get_x() as u16);
+                OperationInput::ADR(addr)
             }
             AddressingMode::ABY => {
-                OperationInput::ADR(0)
+                let addr = self.take_u16_at_pc().wrapping_add(self.cpu.reg.get_y() as u16);
+                OperationInput::ADR(addr)
             }
             AddressingMode::IND => {
                 OperationInput::ADR(0)
