@@ -1,4 +1,4 @@
-use crate::{registers::RegisterState, Variant};
+use crate::{registers::RegisterState, Variant, instruction::{AddressingMode, OperationInput, Instruction}};
 
 const STACK_BASE:       u8 = 0x01;
 const VECTOR_BASE:      u8 = 0xFF;
@@ -79,6 +79,53 @@ impl<B: Bus, V: Variant> CpuWithBus<'_, B, V> {
     fn nmi(&mut self) {}
 
     fn step(&mut self) {
-        
+        let (instr_code, addr_mode) = V::decode(self.take_u8_at_pc()).unwrap();
+        let op_input = self.execute_addressing(addr_mode);
+        self.execute_operation((instr_code, op_input));
+    }
+
+    fn execute_addressing(&mut self, am: AddressingMode) -> OperationInput {
+        match am {
+            AddressingMode::ACC | AddressingMode::IMP => {
+                OperationInput::IMP
+            }
+            AddressingMode::IMM => {
+                OperationInput::IMM(0)
+            }
+            AddressingMode::ZPG => {
+                OperationInput::ADR(0)
+            }
+            AddressingMode::ZPX => {
+                OperationInput::ADR(0)
+            }
+            AddressingMode::ZPY => {
+                OperationInput::ADR(0)
+            }
+            AddressingMode::REL => {
+                OperationInput::REL(0)
+            }
+            AddressingMode::ABS => {
+                OperationInput::ADR(0)
+            }
+            AddressingMode::ABX => {
+                OperationInput::ADR(0)
+            }
+            AddressingMode::ABY => {
+                OperationInput::ADR(0)
+            }
+            AddressingMode::IND => {
+                OperationInput::ADR(0)
+            }
+            AddressingMode::INX => {
+                OperationInput::ADR(0)
+            }
+            AddressingMode::INY => {
+                OperationInput::ADR(0)
+            }
+        }
+    }
+
+    fn execute_operation(&mut self, instruction: Instruction) {
+
     }
 }
