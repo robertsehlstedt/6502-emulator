@@ -110,10 +110,12 @@ impl<B: Bus, V: Variant> CpuWithBus<'_, B, V> {
                 OperationInput::ADR(self.take_u8_at_pc() as u16)
             }
             AddressingMode::ZPX => {
-                OperationInput::ADR(0)
+                let addr = self.take_u8_at_pc().wrapping_add(self.cpu.reg.get_x()) as u16;
+                OperationInput::ADR(addr)
             }
             AddressingMode::ZPY => {
-                OperationInput::ADR(0)
+                let addr = self.take_u8_at_pc().wrapping_add(self.cpu.reg.get_y()) as u16;
+                OperationInput::ADR(addr)
             }
             AddressingMode::REL => {
                 OperationInput::REL(0)
