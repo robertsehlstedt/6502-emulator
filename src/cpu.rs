@@ -120,7 +120,8 @@ impl<B: Bus, V: Variant> CpuWithBus<'_, B, V> {
                 OperationInput::ADR(addr)
             }
             AddressingMode::REL => {
-                OperationInput::REL(0)
+                let offset = self.take_u8_at_pc() as i8 as u16;
+                OperationInput::REL(offset)
             }
             AddressingMode::ABS => {
                 OperationInput::ADR(0)
