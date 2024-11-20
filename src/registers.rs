@@ -28,7 +28,19 @@ impl RegisterState {
         self.update_nz_flags(self.y);
     }
 
-    pub fn update_nz_flags(&mut self, value: u8) {
+    pub fn get_a(&self) -> u8 {
+        self.a
+    }
+
+    pub fn get_x(&self) -> u8 {
+        self.x
+    }
+
+    pub fn get_y(&self) -> u8 {
+        self.y
+    }
+
+    fn update_nz_flags(&mut self, value: u8) {
         self.n = (value as i8).is_negative();
         self.z = value == 0;
     }
