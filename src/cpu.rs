@@ -69,6 +69,18 @@ impl<B: Bus, V: Variant> CpuWithBus<'_, B, V> {
         u16::from_le_bytes([self.take_u8_at_pc(), self.take_u8_at_pc()])
     }
 
+    fn stack_push(&mut self, value: u8) {
+        let addr = u16::from_le_bytes([self.cpu.sp, STACK_BASE]);
+        self.bus.write(addr, value);
+        self.cpu.sp = self.cpu.sp.wrapping_sub(1);
+    }
+
+    fn stack_pop(&mut self) -> u8 {
+        self.cpu.sp = self.cpu.sp.wrapping_add(1);
+        let addr = u16::from_le_bytes([self.cpu.sp, STACK_BASE]);
+        self.bus.read(addr)
+    }
+
     fn reset(&mut self) {
         self.cpu.reg.i = true;
         self.cpu.sp = self.cpu.sp.wrapping_add(3);
