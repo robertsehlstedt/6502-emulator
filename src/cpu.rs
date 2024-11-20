@@ -239,13 +239,13 @@ impl<B: Bus, V: Variant> CpuWithBus<'_, B, V> {
             (InstructionCode::ORA, OperationInput::IMM(val)) => todo!(),
             (InstructionCode::ORA, OperationInput::ADR(addr)) => todo!(),
 
-            (InstructionCode::PHA, OperationInput::IMP) => todo!(),
+            (InstructionCode::PHA, OperationInput::IMP) => self.pha(),
 
-            (InstructionCode::PHP, OperationInput::IMP) => todo!(),
+            (InstructionCode::PHP, OperationInput::IMP) => self.php(),
 
-            (InstructionCode::PLA, OperationInput::IMP) => todo!(),
+            (InstructionCode::PLA, OperationInput::IMP) => self.pla(),
 
-            (InstructionCode::PLP, OperationInput::IMP) => todo!(),
+            (InstructionCode::PLP, OperationInput::IMP) => self.plp(),
 
             (InstructionCode::ROL, OperationInput::IMP) => todo!(),
             (InstructionCode::ROL, OperationInput::ADR(addr)) => todo!(),
@@ -391,6 +391,24 @@ impl<B: Bus, V: Variant> CpuWithBus<'_, B, V> {
     }
 
     fn nop(&self) { }
+
+    fn pha(&mut self) {
+        self.stack_push(self.cpu.reg.get_a());
+    }
+
+    fn php(&mut self) {
+        self.stack_push(self.cpu.reg.get_status(false));
+    }
+
+    fn pla(&mut self) {
+        let value = self.stack_pop();
+        self.cpu.reg.update_a(value);
+    }
+
+    fn plp(&mut self) {
+        let status = self.stack_pop();
+        self.cpu.reg.set_status(status);
+    }
 
 }
 
@@ -572,5 +590,37 @@ mod tests {
         let before = cwb.cpu.reg.get_y();
         cwb.iny();
         assert_eq!(cwb.cpu.reg.get_y(), before.wrapping_add(1));
+    }
+
+    #[test]
+    fn test_pha() {
+        let mut cwb = get_cpu();
+        cwb.cpu.reg.update_a(1);
+        cwb.pha();
+        assert_eq!(cwb.stack_pop(), 1);
+    }
+
+    #[test]
+    fn test_php() {
+        let mut cwb = get_cpu();
+        cwb.cpu.reg.c = true;
+        cwb.php();
+        assert_eq!(cwb.stack_pop(), cwb.cpu.reg.get_status(false));
+    }
+
+    #[test]
+    fn test_pla() {
+        let mut cwb = get_cpu();
+        cwb.stack_push(1);
+        cwb.pla();
+        assert_eq!(cwb.cpu.reg.get_a(), 1);
+    }
+
+    #[test]
+    fn test_plp() {
+        let mut cwb = get_cpu();
+        cwb.stack_push(1);
+        cwb.plp();
+        assert!(cwb.cpu.reg.c);
     }
 }

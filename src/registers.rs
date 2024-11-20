@@ -44,4 +44,26 @@ impl RegisterState {
         self.n = (value as i8).is_negative();
         self.z = value == 0;
     }
+
+    pub fn get_status(&self, brk: bool) -> u8 {
+        let b = |flag, shift| (flag as u8) << shift;
+        b(self.c, 0) |
+        b(self.z, 1) |
+        b(self.i, 2) |
+        b(self.d, 3) |
+        b(brk,    4) |
+        b(true,   5) |
+        b(self.v, 6) |
+        b(self.n, 7)
+    }
+
+    pub fn set_status(&mut self, value: u8) {
+        let b = |shift: u8| value & (1 << shift) != 0;
+        self.c = b(0);
+        self.z = b(1);
+        self.i = b(2);
+        self.d = b(3);
+        self.v = b(6);
+        self.n = b(7);
+    }
 }
