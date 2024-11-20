@@ -22,7 +22,8 @@ impl Bus for Memory {
 }
 
 fn main() {
-    let mut c = Cpu::new(MyCPU);
-    let mut m= Memory{};
-    c.step(&mut m);
+    // let mut c = Cpu::new(MyCPU);
+    // let mut m= Memory{};
+    // c.step(&mut m);
+    let n: u8 = 0xFF;
 }
