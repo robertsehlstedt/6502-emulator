@@ -272,17 +272,17 @@ impl<B: Bus, V: Variant> CpuWithBus<'_, B, V> {
 
             (InstructionCode::STY, OperationInput::ADR(addr)) => todo!(),
 
-            (InstructionCode::TAX, OperationInput::IMP) => todo!(),
+            (InstructionCode::TAX, OperationInput::IMP) => self.tax(),
 
-            (InstructionCode::TAY, OperationInput::IMP) => todo!(),
+            (InstructionCode::TAY, OperationInput::IMP) => self.tay(),
 
-            (InstructionCode::TSX, OperationInput::IMP) => todo!(),
+            (InstructionCode::TSX, OperationInput::IMP) => self.tsx(),
 
-            (InstructionCode::TXA, OperationInput::IMP) => todo!(),
+            (InstructionCode::TXA, OperationInput::IMP) => self.txa(),
 
-            (InstructionCode::TXS, OperationInput::IMP) => todo!(),
+            (InstructionCode::TXS, OperationInput::IMP) => self.txs(),
 
-            (InstructionCode::TYA, OperationInput::IMP) => todo!(),
+            (InstructionCode::TYA, OperationInput::IMP) => self.tya(),
 
             _illegal => panic!(),
         }
@@ -420,6 +420,30 @@ impl<B: Bus, V: Variant> CpuWithBus<'_, B, V> {
 
     fn sei(&mut self) {
         self.cpu.reg.i = true;
+    }
+
+    fn tax(&mut self) {
+        self.cpu.reg.update_x(self.cpu.reg.get_a());
+    }
+
+    fn tay(&mut self) {
+        self.cpu.reg.update_y(self.cpu.reg.get_a());
+    }
+
+    fn tsx(&mut self) {
+        self.cpu.reg.update_x(self.cpu.sp);
+    }
+
+    fn txa(&mut self) {
+        self.cpu.reg.update_a(self.cpu.reg.get_x());
+    }
+
+    fn txs(&mut self) {
+        self.cpu.sp = self.cpu.reg.get_x();
+    }
+
+    fn tya(&mut self) {
+        self.cpu.reg.update_a(self.cpu.reg.get_y());
     }
 
 }
@@ -655,5 +679,53 @@ mod tests {
         let mut cwb = get_cpu();
         cwb.sei();
         assert!(cwb.cpu.reg.i);
+    }
+
+    #[test]
+    fn test_tax() {
+        let mut cwb = get_cpu();
+        cwb.cpu.reg.update_a(1);
+        cwb.tax();
+        assert_eq!(cwb.cpu.reg.get_x(), 1);
+    }
+
+    #[test]
+    fn test_tay() {
+        let mut cwb = get_cpu();
+        cwb.cpu.reg.update_a(1);
+        cwb.tay();
+        assert_eq!(cwb.cpu.reg.get_y(), 1);
+    }
+
+    #[test]
+    fn test_tsx() {
+        let mut cwb = get_cpu();
+        cwb.cpu.sp = 1;
+        cwb.tsx();
+        assert_eq!(cwb.cpu.reg.get_x(), 1);
+    }
+
+    #[test]
+    fn test_txa() {
+        let mut cwb = get_cpu();
+        cwb.cpu.reg.update_x(1);
+        cwb.txa();
+        assert_eq!(cwb.cpu.reg.get_a(), 1);
+    }
+
+    #[test]
+    fn test_txs() {
+        let mut cwb = get_cpu();
+        cwb.cpu.reg.update_x(1);
+        cwb.txs();
+        assert_eq!(cwb.cpu.sp, 1);
+    }
+
+    #[test]
+    fn test_tya() {
+        let mut cwb = get_cpu();
+        cwb.cpu.reg.update_y(1);
+        cwb.tya();
+        assert_eq!(cwb.cpu.reg.get_a(), 1);
     }
 }
