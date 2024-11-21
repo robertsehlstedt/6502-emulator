@@ -184,8 +184,8 @@ impl<B: Bus, V: Variant> CpuWithBus<'_, B, V> {
 
             (InstructionCode::DEY, OperationInput::IMP) => self.dey(),
 
-            (InstructionCode::EOR, OperationInput::IMM(val)) => todo!(),
-            (InstructionCode::EOR, OperationInput::ADR(addr)) => todo!(),
+            (InstructionCode::EOR, OperationInput::IMM(val)) => self.eor_imm(val),
+            (InstructionCode::EOR, OperationInput::ADR(addr)) => self.eor_adr(addr),
 
             (InstructionCode::INC, OperationInput::ADR(addr)) => self.inc(addr),
 
@@ -394,6 +394,15 @@ impl<B: Bus, V: Variant> CpuWithBus<'_, B, V> {
         self.cpu.reg.update_y(self.cpu.reg.get_y().wrapping_sub(1));
     }
 
+    fn eor_imm(&mut self, value: u8) {
+        self.cpu.reg.update_a(self.cpu.reg.get_a() ^ value);
+    }
+
+    fn eor_adr(&mut self, addr: u16) {
+        let value = self.bus.read(addr);
+        self.eor_imm(value);
+    }
+
     fn inc(&mut self, addr: u16) {
         let n = self.bus.read(addr);
         let result = n.wrapping_add(1);
@@ -553,7 +562,7 @@ mod tests {
 
     struct MockVariant;
     impl Variant for MockVariant {
-        fn decode(opcode: u8) -> Option<(
+        fn decode(_: u8) -> Option<(
             crate::instruction::InstructionCode,
             crate::instruction::AddressingMode
         )> {
@@ -898,6 +907,68 @@ mod tests {
         let before = cwb.cpu.reg.get_y();
         cwb.dey();
         assert_eq!(cwb.cpu.reg.get_y(), before.wrapping_sub(1));
+    }
+
+    #[test]
+    fn test_eor_imm() {
+        let mut cwb = get_cpu();
+
+        cwb.cpu.reg.update_a(0x00);
+        cwb.eor_imm(0x00);
+        assert_eq!(cwb.cpu.reg.get_a(), 0x00);
+        assert!(cwb.cpu.reg.z);
+        assert!(!cwb.cpu.reg.n);
+
+        cwb.cpu.reg.update_a(0x00);
+        cwb.eor_imm(0x01);
+        assert_eq!(cwb.cpu.reg.get_a(), 0x01);
+        assert!(!cwb.cpu.reg.z);
+        assert!(!cwb.cpu.reg.z);
+
+        cwb.cpu.reg.update_a(0x01);
+        cwb.eor_imm(0x01);
+        assert_eq!(cwb.cpu.reg.get_a(), 0x00);
+        assert!(cwb.cpu.reg.z);
+        assert!(!cwb.cpu.reg.n);
+
+        cwb.cpu.reg.update_a(0x00);
+        cwb.eor_imm(0b1000_0000);
+        assert_eq!(cwb.cpu.reg.get_a(), 0b1000_0000);
+        assert!(!cwb.cpu.reg.z);
+        assert!(cwb.cpu.reg.n);
+    }
+
+    #[test]
+    fn test_eor_adr() {
+        let mut cwb = get_cpu();
+
+        cwb.bus.write(0, 0x00);
+        cwb.cpu.reg.update_a(0x00);
+        cwb.eor_adr(0);
+        assert_eq!(cwb.cpu.reg.get_a(), 0x00);
+        assert!(cwb.cpu.reg.z);
+        assert!(!cwb.cpu.reg.n);
+
+        cwb.bus.write(0, 0x01);
+        cwb.cpu.reg.update_a(0x00);
+        cwb.eor_adr(0);
+        assert_eq!(cwb.cpu.reg.get_a(), 0x01);
+        assert!(!cwb.cpu.reg.z);
+        assert!(!cwb.cpu.reg.z);
+
+        cwb.bus.write(0, 0x01);
+        cwb.cpu.reg.update_a(0x01);
+        cwb.eor_adr(0);
+        assert_eq!(cwb.cpu.reg.get_a(), 0x00);
+        assert!(cwb.cpu.reg.z);
+        assert!(!cwb.cpu.reg.n);
+
+        cwb.bus.write(0, 0b1000_0000);
+        cwb.cpu.reg.update_a(0x00);
+        cwb.eor_adr(0);
+        assert_eq!(cwb.cpu.reg.get_a(), 0b1000_0000);
+        assert!(!cwb.cpu.reg.z);
+        assert!(cwb.cpu.reg.n);
     }
 
     #[test]
