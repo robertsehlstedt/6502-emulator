@@ -89,13 +89,28 @@ impl<B: Bus, V: Variant> CpuWithBus<'_, B, V> {
         self.cpu.pc = self.read_u16(VECTOR_BASE, RESET_VECTOR);
     }
     
-    fn irq(&mut self) {}
-    fn nmi(&mut self) {}
+    fn irq(&mut self) {
+        if (!self.cpu.reg.i) {
+            self.interrupt(IRQ_BRK_VECTOR, false);
+        }
+    }
+    fn nmi(&mut self) {
+        self.interrupt(NMI_VECTOR, false);
+    }
 
     fn step(&mut self) {
         let (instr_code, addr_mode) = V::decode(self.take_u8_at_pc()).unwrap();
         let op_input = self.execute_addressing(addr_mode);
         self.execute_operation((instr_code, op_input));
+    }
+
+    fn interrupt(&mut self, vector: u8, brk: bool) {
+        let [pc_low, pc_high] = self.cpu.pc.to_le_bytes();
+        self.stack_push(pc_high);
+        self.stack_push(pc_low);
+        self.stack_push(self.cpu.reg.get_status(brk));
+        self.cpu.reg.i = true;
+        self.cpu.pc = self.read_u16(VECTOR_BASE, vector);
     }
 
     fn execute_addressing(&mut self, am: AddressingMode) -> OperationInput {
@@ -179,7 +194,7 @@ impl<B: Bus, V: Variant> CpuWithBus<'_, B, V> {
 
             (InstructionCode::BPL, OperationInput::REL(offset)) => self.bpl(offset),
 
-            (InstructionCode::BRK, OperationInput::REL(offset)) => todo!(),
+            (InstructionCode::BRK, OperationInput::REL(offset)) => self.brk(),
 
             (InstructionCode::BVC, OperationInput::REL(offset)) => self.bvc(offset),
 
@@ -328,6 +343,11 @@ impl<B: Bus, V: Variant> CpuWithBus<'_, B, V> {
             let addr = self.cpu.pc.wrapping_add(offset);
             self.cpu.pc = addr;
         }
+    }
+
+    fn brk(&mut self) {
+        self.cpu.pc = self.cpu.pc.wrapping_add(1);
+        self.interrupt(IRQ_BRK_VECTOR, true);
     }
 
     fn bvc(&mut self, offset: u16) {
@@ -516,12 +536,10 @@ impl<B: Bus, V: Variant> CpuWithBus<'_, B, V> {
 mod tests {
     use super::*;
 
-    struct MockBus {
-        memory: [u8; u16::MAX as usize],
-    }
+    struct MockBus([u8; 65536]);
     impl Bus for MockBus {
-        fn read(&mut self, addr: u16) -> u8 { self.memory[addr as usize] }
-        fn write(&mut self, addr: u16, value: u8) { self.memory[addr as usize] = value }
+        fn read(&mut self, addr: u16) -> u8 { self.0[addr as usize] }
+        fn write(&mut self, addr: u16, value: u8) { self.0[addr as usize] = value }
     }
 
     struct MockVariant;
@@ -536,7 +554,7 @@ mod tests {
 
     fn get_cpu() -> CpuWithBus<'static, MockBus, MockVariant> {
         let cpu = Box::leak(Box::new(Cpu::new(MockVariant)));
-        let bus = Box::leak(Box::new(MockBus { memory: [0; u16::MAX as usize] }));
+        let bus = Box::leak(Box::new(MockBus([0; 65536])));
         CpuWithBus {cpu: cpu, bus: bus}
     }
 
@@ -592,6 +610,21 @@ mod tests {
         let before = cwb.cpu.pc;
         cwb.bpl(1);
         assert_eq!(cwb.cpu.pc, before.wrapping_add(1));
+    }
+
+    #[test]
+    fn test_brk() {
+        let mut cwb = get_cpu();
+        cwb.cpu.pc = 0xABCD;
+        cwb.bus.write(u16::from_le_bytes([IRQ_BRK_VECTOR, VECTOR_BASE]), 0xAA);
+        cwb.bus.write(u16::from_le_bytes([IRQ_BRK_VECTOR.wrapping_add(1), VECTOR_BASE]), 0xBB);
+        cwb.brk();
+        assert_eq!(cwb.stack_pop(), 0b0011_0000);
+        assert_eq!(cwb.stack_pop(), 0xCE);
+        assert_eq!(cwb.stack_pop(), 0xAB);
+        println!("{:04x}", cwb.cpu.pc);
+        assert_eq!(cwb.cpu.pc, 0xBBAA);
+        assert!(cwb.cpu.reg.i);
     }
 
     #[test]
