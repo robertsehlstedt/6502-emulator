@@ -138,8 +138,8 @@ impl<B: Bus, V: Variant> CpuWithBus<'_, B, V> {
             (InstructionCode::AND, OperationInput::IMM(val)) => self.and_imm(val),
             (InstructionCode::AND, OperationInput::ADR(addr)) => self.and_adr(addr),
 
-            (InstructionCode::ASL, OperationInput::IMP) => todo!(),
-            (InstructionCode::ASL, OperationInput::ADR(val)) => todo!(),
+            (InstructionCode::ASL, OperationInput::IMP) => self.asl_imp(),
+            (InstructionCode::ASL, OperationInput::ADR(addr)) => self.asl_adr(addr),
 
             (InstructionCode::BCC, OperationInput::REL(offset)) => self.bcc(offset),
             
@@ -270,6 +270,19 @@ impl<B: Bus, V: Variant> CpuWithBus<'_, B, V> {
     fn and_adr(&mut self, addr: u16) {
         let value = self.bus.read(addr);
         self.and_imm(value);
+    }
+    
+    fn asl_imp(&mut self) {
+        self.cpu.reg.c = self.cpu.reg.get_a() & 0b1000_0000 != 0;
+        self.cpu.reg.update_a(self.cpu.reg.get_a() << 1);
+    }
+
+    fn asl_adr(&mut self, addr: u16) {
+        let n = self.bus.read(addr);
+        self.cpu.reg.c = n & 0b1000_0000 != 0;
+        let result = n << 1;
+        self.bus.write(addr, result);
+        self.cpu.reg.update_nz_flags(result);
     }
     
     fn bcc(&mut self, offset: u16) {
@@ -621,6 +634,58 @@ mod tests {
         cwb.bus.write(0, 0b1000_0000);
         cwb.and_adr(0);
         assert_eq!(cwb.cpu.reg.get_a(), 0b1000_0000);
+        assert!(!cwb.cpu.reg.z);
+        assert!(cwb.cpu.reg.n);
+    }
+
+    #[test]
+    fn test_asl_imp() {
+        let mut cwb = get_cpu();
+
+        cwb.cpu.reg.update_a(0b0000_0001);
+        cwb.asl_imp();
+        assert_eq!(cwb.cpu.reg.get_a(), 0b0000_0010);
+        assert!(!cwb.cpu.reg.c);
+        assert!(!cwb.cpu.reg.z);
+        assert!(!cwb.cpu.reg.n);
+
+        cwb.cpu.reg.update_a(0b1000_0000);
+        cwb.asl_imp();
+        assert_eq!(cwb.cpu.reg.get_a(), 0b0000_0000);
+        assert!(cwb.cpu.reg.c);
+        assert!(cwb.cpu.reg.z);
+        assert!(!cwb.cpu.reg.n);
+
+        cwb.cpu.reg.update_a(0b0100_0000);
+        cwb.asl_imp();
+        assert_eq!(cwb.cpu.reg.get_a(), 0b1000_0000);
+        assert!(!cwb.cpu.reg.c);
+        assert!(!cwb.cpu.reg.z);
+        assert!(cwb.cpu.reg.n);
+    }
+
+    #[test]
+    fn test_asl_adr() {
+        let mut cwb = get_cpu();
+
+        cwb.bus.write(0, 0b0000_0001);
+        cwb.asl_adr(0);
+        assert_eq!(cwb.bus.read(0), 0b0000_0010);
+        assert!(!cwb.cpu.reg.c);
+        assert!(!cwb.cpu.reg.z);
+        assert!(!cwb.cpu.reg.n);
+
+        cwb.bus.write(0, 0b1000_0000);
+        cwb.asl_adr(0);
+        assert_eq!(cwb.bus.read(0), 0b0000_0000);
+        assert!(cwb.cpu.reg.c);
+        assert!(cwb.cpu.reg.z);
+        assert!(!cwb.cpu.reg.n);
+
+        cwb.bus.write(0, 0b0100_0000);
+        cwb.asl_adr(0);
+        assert_eq!(cwb.bus.read(0), 0b1000_0000);
+        assert!(!cwb.cpu.reg.c);
         assert!(!cwb.cpu.reg.z);
         assert!(cwb.cpu.reg.n);
     }
