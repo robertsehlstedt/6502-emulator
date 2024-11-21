@@ -1,3 +1,5 @@
+use crate::instruction::{InstructionCode, AddressingMode};
+
 #[derive(Debug, Copy, Clone)]
 pub struct Nmos6502;
 

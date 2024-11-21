@@ -1,5 +1,7 @@
 pub mod instruction;
 
+pub mod nmos6502;
+
 mod cpu;
 mod registers;
 
