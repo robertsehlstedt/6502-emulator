@@ -9,7 +9,7 @@ const RESET_VECTOR:     u8 = 0xFC;
 const NMI_VECTOR:       u8 = 0xFA;
 
 pub trait Bus {
-    fn read(&mut self, addr: u16) -> u8;
+    fn read(&self, addr: u16) -> u8;
     fn write(&mut self, addr: u16, value: u8);
 }
 
@@ -538,7 +538,7 @@ mod tests {
 
     struct MockBus([u8; 65536]);
     impl Bus for MockBus {
-        fn read(&mut self, addr: u16) -> u8 { self.0[addr as usize] }
+        fn read(&self, addr: u16) -> u8 { self.0[addr as usize] }
         fn write(&mut self, addr: u16, value: u8) { self.0[addr as usize] = value }
     }
 
