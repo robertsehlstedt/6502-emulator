@@ -135,8 +135,8 @@ impl<B: Bus, V: Variant> CpuWithBus<'_, B, V> {
             (InstructionCode::ADC, OperationInput::IMM(val)) => todo!(),
             (InstructionCode::ADC, OperationInput::ADR(addr)) => todo!(),
 
-            (InstructionCode::AND, OperationInput::IMM(val)) => todo!(),
-            (InstructionCode::AND, OperationInput::ADR(addr)) => todo!(),
+            (InstructionCode::AND, OperationInput::IMM(val)) => self.and_imm(val),
+            (InstructionCode::AND, OperationInput::ADR(addr)) => self.and_adr(addr),
 
             (InstructionCode::ASL, OperationInput::IMP) => todo!(),
             (InstructionCode::ASL, OperationInput::ADR(val)) => todo!(),
@@ -263,6 +263,15 @@ impl<B: Bus, V: Variant> CpuWithBus<'_, B, V> {
         }
     }
 
+    fn and_imm(&mut self, value: u8) {
+        self.cpu.reg.update_a(self.cpu.reg.get_a() & value);
+    }
+
+    fn and_adr(&mut self, addr: u16) {
+        let value = self.bus.read(addr);
+        self.and_imm(value);
+    }
+    
     fn bcc(&mut self, offset: u16) {
         if !self.cpu.reg.c {
             let addr = self.cpu.pc.wrapping_add(offset);
@@ -547,6 +556,55 @@ mod tests {
         let cpu = Box::leak(Box::new(Cpu::new(MockVariant)));
         let bus = Box::leak(Box::new(MockBus([0; 65536])));
         CpuWithBus {cpu: cpu, bus: bus}
+    }
+
+    #[test]
+    fn test_and_imm() {
+        let mut cwb = get_cpu();
+        
+        cwb.cpu.reg.update_a(0xFF);
+        cwb.and_imm(0);
+        assert_eq!(cwb.cpu.reg.get_a(), 0x00);
+        assert!(cwb.cpu.reg.z);
+        assert!(!cwb.cpu.reg.n);
+
+        cwb.cpu.reg.update_a(0xFF);
+        cwb.and_imm(0x01);
+        assert_eq!(cwb.cpu.reg.get_a(), 0x01);
+        assert!(!cwb.cpu.reg.z);
+        assert!(!cwb.cpu.reg.n);
+
+        cwb.cpu.reg.update_a(0xFF);
+        cwb.and_imm(0b1000_0000);
+        assert_eq!(cwb.cpu.reg.get_a(), 0b1000_0000);
+        assert!(!cwb.cpu.reg.z);
+        assert!(cwb.cpu.reg.n);
+    }
+
+    #[test]
+    fn test_and_adr() {
+        let mut cwb = get_cpu();
+        
+        cwb.cpu.reg.update_a(0xFF);
+        cwb.bus.write(0, 0);
+        cwb.and_adr(0);
+        assert_eq!(cwb.cpu.reg.get_a(), 0x00);
+        assert!(cwb.cpu.reg.z);
+        assert!(!cwb.cpu.reg.n);
+
+        cwb.cpu.reg.update_a(0xFF);
+        cwb.bus.write(0, 0x01);
+        cwb.and_adr(0);
+        assert_eq!(cwb.cpu.reg.get_a(), 0x01);
+        assert!(!cwb.cpu.reg.z);
+        assert!(!cwb.cpu.reg.n);
+
+        cwb.cpu.reg.update_a(0xFF);
+        cwb.bus.write(0, 0b1000_0000);
+        cwb.and_adr(0);
+        assert_eq!(cwb.cpu.reg.get_a(), 0b1000_0000);
+        assert!(!cwb.cpu.reg.z);
+        assert!(cwb.cpu.reg.n);
     }
 
     #[test]
