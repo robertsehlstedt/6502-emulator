@@ -253,9 +253,9 @@ impl<B: Bus, V: Variant> CpuWithBus<'_, B, V> {
             (InstructionCode::ROR, OperationInput::IMP) => todo!(),
             (InstructionCode::ROR, OperationInput::ADR(addr)) => todo!(),
 
-            (InstructionCode::RTI, OperationInput::IMP) => todo!(),
+            (InstructionCode::RTI, OperationInput::IMP) => self.rti(),
 
-            (InstructionCode::RTS, OperationInput::IMP) => todo!(),
+            (InstructionCode::RTS, OperationInput::IMP) => self.rts(),
 
             (InstructionCode::SBC, OperationInput::IMM(val)) => todo!(),
             (InstructionCode::SBC, OperationInput::ADR(addr)) => todo!(),
@@ -408,6 +408,20 @@ impl<B: Bus, V: Variant> CpuWithBus<'_, B, V> {
     fn plp(&mut self) {
         let status = self.stack_pop();
         self.cpu.reg.set_status(status);
+    }
+
+    fn rti(&mut self) {
+        let status = self.stack_pop();
+        self.cpu.reg.set_status(status);
+        let pc_low = self.stack_pop();
+        let pc_high = self.stack_pop();
+        self.cpu.pc = u16::from_le_bytes([pc_low, pc_high]);
+    }
+
+    fn rts(&mut self) {
+        let pc_low = self.stack_pop();
+        let pc_high = self.stack_pop();
+        self.cpu.pc = u16::from_le_bytes([pc_low, pc_high]).wrapping_sub(1);
     }
 
     fn sec(&mut self) {
@@ -658,6 +672,26 @@ mod tests {
         cwb.stack_push(1);
         cwb.plp();
         assert!(cwb.cpu.reg.c);
+    }
+
+    #[test]
+    fn test_rti() {
+        let mut cwb = get_cpu();
+        cwb.stack_push(0xFF);
+        cwb.stack_push(0x0A);
+        cwb.stack_push(0b0000_0001);
+        cwb.rti();
+        assert!(cwb.cpu.reg.c);
+        assert_eq!(cwb.cpu.pc, 0xFF0A);
+    }
+
+    #[test]
+    fn test_rts() {
+        let mut cwb = get_cpu();
+        cwb.stack_push(0xFF);
+        cwb.stack_push(0x0A);
+        cwb.rts();
+        assert_eq!(cwb.cpu.pc, 0xFF09);
     }
 
     #[test]
