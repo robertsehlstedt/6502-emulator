@@ -211,8 +211,8 @@ impl<B: Bus, V: Variant> CpuWithBus<'_, B, V> {
 
             (InstructionCode::NOP, OperationInput::IMP) => self.nop(),
 
-            (InstructionCode::ORA, OperationInput::IMM(val)) => todo!(),
-            (InstructionCode::ORA, OperationInput::ADR(addr)) => todo!(),
+            (InstructionCode::ORA, OperationInput::IMM(val)) => self.ora_imm(val),
+            (InstructionCode::ORA, OperationInput::ADR(addr)) => self.ora_adr(addr),
 
             (InstructionCode::PHA, OperationInput::IMP) => self.pha(),
 
@@ -449,6 +449,15 @@ impl<B: Bus, V: Variant> CpuWithBus<'_, B, V> {
     }
 
     fn nop(&self) { }
+
+    fn ora_imm(&mut self, value: u8) {
+        self.cpu.reg.update_a(self.cpu.reg.get_a() | value);
+    }
+
+    fn ora_adr(&mut self, addr: u16) {
+        let value = self.bus.read(addr);
+        self.ora_imm(value);
+    }
 
     fn pha(&mut self) {
         self.stack_push(self.cpu.reg.get_a());
@@ -1059,6 +1068,55 @@ mod tests {
         assert_eq!(cwb.cpu.reg.get_y(), 1);
         assert!(!cwb.cpu.reg.z);
         assert!(!cwb.cpu.reg.n);
+    }
+
+    #[test]
+    fn test_ora_imm() {
+        let mut cwb = get_cpu();
+        
+        cwb.cpu.reg.update_a(0x00);
+        cwb.ora_imm(0x00);
+        assert_eq!(cwb.cpu.reg.get_a(), 0x00);
+        assert!(cwb.cpu.reg.z);
+        assert!(!cwb.cpu.reg.n);
+
+        cwb.cpu.reg.update_a(0x00);
+        cwb.ora_imm(0x01);
+        assert_eq!(cwb.cpu.reg.get_a(), 0x01);
+        assert!(!cwb.cpu.reg.z);
+        assert!(!cwb.cpu.reg.n);
+
+        cwb.cpu.reg.update_a(0x00);
+        cwb.ora_imm(0b1000_0000);
+        assert_eq!(cwb.cpu.reg.get_a(), 0b1000_0000);
+        assert!(!cwb.cpu.reg.z);
+        assert!(cwb.cpu.reg.n);
+    }
+
+    #[test]
+    fn test_ora_adr() {
+        let mut cwb = get_cpu();
+        
+        cwb.cpu.reg.update_a(0x00);
+        cwb.bus.write(0, 0x00);
+        cwb.ora_adr(0);
+        assert_eq!(cwb.cpu.reg.get_a(), 0x00);
+        assert!(cwb.cpu.reg.z);
+        assert!(!cwb.cpu.reg.n);
+
+        cwb.cpu.reg.update_a(0x00);
+        cwb.bus.write(0, 0x01);
+        cwb.ora_adr(0);
+        assert_eq!(cwb.cpu.reg.get_a(), 0x01);
+        assert!(!cwb.cpu.reg.z);
+        assert!(!cwb.cpu.reg.n);
+
+        cwb.cpu.reg.update_a(0x00);
+        cwb.bus.write(0, 0b1000_0000);
+        cwb.ora_adr(0);
+        assert_eq!(cwb.cpu.reg.get_a(), 0b1000_0000);
+        assert!(!cwb.cpu.reg.z);
+        assert!(cwb.cpu.reg.n);
     }
 
     #[test]
