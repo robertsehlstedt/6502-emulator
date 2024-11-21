@@ -132,8 +132,8 @@ impl<B: Bus, V: Variant> CpuWithBus<'_, B, V> {
 
     fn execute_operation(&mut self, instruction: Instruction) {
         match instruction  {
-            (InstructionCode::ADC, OperationInput::IMM(val)) => todo!(),
-            (InstructionCode::ADC, OperationInput::ADR(addr)) => todo!(),
+            (InstructionCode::ADC, OperationInput::IMM(val)) => self.adc_imm(val),
+            (InstructionCode::ADC, OperationInput::ADR(addr)) => self.adc_adr(addr),
 
             (InstructionCode::AND, OperationInput::IMM(val)) => self.and_imm(val),
             (InstructionCode::AND, OperationInput::ADR(addr)) => self.and_adr(addr),
@@ -261,6 +261,23 @@ impl<B: Bus, V: Variant> CpuWithBus<'_, B, V> {
 
             _illegal => panic!(),
         }
+    }
+
+    fn adc_imm(&mut self, value: u8) {
+        let value = value as u16;
+        let carry = self.cpu.reg.c as u16;
+        let result = self.cpu.reg.get_a() as u16 + value + carry;
+        let seven_bit_result = (self.cpu.reg.get_a() as u16 & 0x7F) + (value & 0x7F) + carry;
+        let carry_out = result > 0xFF;
+        let seven_bit_carry_out = seven_bit_result > 0x7F;
+        self.cpu.reg.c = carry_out;
+        self.cpu.reg.v = carry_out != seven_bit_carry_out;
+        self.cpu.reg.update_a(result as u8);
+    }
+
+    fn adc_adr(&mut self, addr: u16) {
+        let value = self.bus.read(addr);
+        self.adc_imm(value);
     }
 
     fn and_imm(&mut self, value: u8) {
