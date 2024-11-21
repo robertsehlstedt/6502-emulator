@@ -266,11 +266,11 @@ impl<B: Bus, V: Variant> CpuWithBus<'_, B, V> {
 
             (InstructionCode::SEI, OperationInput::IMP) => self.sei(),
 
-            (InstructionCode::STA, OperationInput::ADR(addr)) => todo!(),
+            (InstructionCode::STA, OperationInput::ADR(addr)) => self.sta(addr),
 
-            (InstructionCode::STX, OperationInput::ADR(addr)) => todo!(),
+            (InstructionCode::STX, OperationInput::ADR(addr)) => self.stx(addr),
 
-            (InstructionCode::STY, OperationInput::ADR(addr)) => todo!(),
+            (InstructionCode::STY, OperationInput::ADR(addr)) => self.sty(addr),
 
             (InstructionCode::TAX, OperationInput::IMP) => self.tax(),
 
@@ -442,6 +442,18 @@ impl<B: Bus, V: Variant> CpuWithBus<'_, B, V> {
 
     fn sei(&mut self) {
         self.cpu.reg.i = true;
+    }
+
+    fn sta(&mut self, addr: u16)  {
+        self.bus.write(addr, self.cpu.reg.get_a());
+    }
+
+    fn stx(&mut self, addr: u16) {
+        self.bus.write(addr, self.cpu.reg.get_x());
+    }
+
+    fn sty(&mut self, addr: u16) {
+        self.bus.write(addr, self.cpu.reg.get_y());
     }
 
     fn tax(&mut self) {
@@ -731,6 +743,30 @@ mod tests {
         let mut cwb = get_cpu();
         cwb.sei();
         assert!(cwb.cpu.reg.i);
+    }
+
+    #[test]
+    fn test_sta() {
+        let mut cwb = get_cpu();
+        cwb.cpu.reg.update_a(1);
+        cwb.sta(0xABCD);
+        assert_eq!(cwb.bus.read(0xABCD), 1);
+    }
+
+    #[test]
+    fn test_stx() {
+        let mut cwb = get_cpu();
+        cwb.cpu.reg.update_x(1);
+        cwb.stx(0xABCD);
+        assert_eq!(cwb.bus.read(0xABCD), 1);
+    }
+
+    #[test]
+    fn test_sty() {
+        let mut cwb = get_cpu();
+        cwb.cpu.reg.update_y(1);
+        cwb.sty(0xABCD);
+        assert_eq!(cwb.bus.read(0xABCD), 1);
     }
 
     #[test]
