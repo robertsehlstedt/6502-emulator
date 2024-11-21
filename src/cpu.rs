@@ -147,7 +147,7 @@ impl<B: Bus, V: Variant> CpuWithBus<'_, B, V> {
 
             (InstructionCode::BEQ, OperationInput::REL(offset)) => self.beq(offset),
 
-            (InstructionCode::BIT, OperationInput::REL(offset)) => todo!(),
+            (InstructionCode::BIT, OperationInput::ADR(addr)) => self.bit(addr),
 
             (InstructionCode::BMI, OperationInput::REL(offset)) => self.bmi(offset),
 
@@ -304,6 +304,13 @@ impl<B: Bus, V: Variant> CpuWithBus<'_, B, V> {
             let addr = self.cpu.pc.wrapping_add(offset);
             self.cpu.pc = addr;
         }
+    }
+
+    fn bit(&mut self, addr: u16) {
+        let n = self.bus.read(addr);
+        self.cpu.reg.z = self.cpu.reg.get_a() & n == 0;
+        self.cpu.reg.v = n & 0b0100_0000 != 0;
+        self.cpu.reg.n = n & 0b1000_0000 != 0;
     }
 
     fn bmi(&mut self, offset: u16) {
@@ -758,6 +765,31 @@ mod tests {
         let before = cwb.cpu.pc;
         cwb.beq(1);
         assert_eq!(cwb.cpu.pc, before.wrapping_add(1));
+    }
+
+    #[test]
+    fn test_bit() {
+        let mut cwb = get_cpu();
+
+        cwb.bus.write(0, 0);
+        cwb.bit(0);
+        assert!(!cwb.cpu.reg.v);
+        assert!(!cwb.cpu.reg.n);
+
+        cwb.bus.write(0, 0b1100_0000);
+        cwb.bit(0);
+        assert!(cwb.cpu.reg.v);
+        assert!(cwb.cpu.reg.n);
+
+        cwb.cpu.reg.update_a(0);
+        cwb.bus.write(0, 0xFF);
+        cwb.bit(0);
+        assert!(cwb.cpu.reg.z);
+
+        cwb.cpu.reg.update_a(0x0F);
+        cwb.bus.write(0, 0xFF);
+        cwb.bit(0);
+        assert!(!cwb.cpu.reg.z);
     }
 
     #[test]
