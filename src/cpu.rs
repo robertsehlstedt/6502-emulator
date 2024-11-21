@@ -197,14 +197,14 @@ impl<B: Bus, V: Variant> CpuWithBus<'_, B, V> {
 
             (InstructionCode::JSR, OperationInput::ADR(addr)) => self.jsr(addr),
 
-            (InstructionCode::LDA, OperationInput::IMM(val)) => todo!(),
-            (InstructionCode::LDA, OperationInput::ADR(addr)) => todo!(),
+            (InstructionCode::LDA, OperationInput::IMM(val)) => self.lda_imm(val),
+            (InstructionCode::LDA, OperationInput::ADR(addr)) => self.lda_adr(addr),
 
-            (InstructionCode::LDX, OperationInput::IMM(val)) => todo!(),
-            (InstructionCode::LDX, OperationInput::ADR(addr)) => todo!(),
+            (InstructionCode::LDX, OperationInput::IMM(val)) => self.ldx_imm(val),
+            (InstructionCode::LDX, OperationInput::ADR(addr)) => self.ldx_adr(addr),
 
-            (InstructionCode::LDY, OperationInput::IMM(val)) => todo!(),
-            (InstructionCode::LDY, OperationInput::ADR(addr)) => todo!(),
+            (InstructionCode::LDY, OperationInput::IMM(val)) => self.ldy_imm(val),
+            (InstructionCode::LDY, OperationInput::ADR(addr)) => self.ldy_adr(addr),
 
             (InstructionCode::LSR, OperationInput::IMP) => todo!(),
             (InstructionCode::LSR, OperationInput::ADR(addr)) => todo!(),
@@ -410,6 +410,33 @@ impl<B: Bus, V: Variant> CpuWithBus<'_, B, V> {
         self.stack_push(ret_high);
         self.stack_push(ret_low);
         self.cpu.pc = addr;
+    }
+
+    fn lda_imm(&mut self, value: u8) {
+        self.cpu.reg.update_a(value);
+    }
+
+    fn lda_adr(&mut self, addr: u16) {
+        let value = self.bus.read(addr);
+        self.lda_imm(value);
+    }
+
+    fn ldx_imm(&mut self, value: u8) {
+        self.cpu.reg.update_x(value);
+    }
+
+    fn ldx_adr(&mut self, addr: u16) {
+        let value = self.bus.read(addr);
+        self.ldx_imm(value);
+    }
+
+    fn ldy_imm(&mut self, value: u8) {
+        self.cpu.reg.update_y(value);
+    }
+
+    fn ldy_adr(&mut self, addr: u16) {
+        let value = self.bus.read(addr);
+        self.ldy_imm(value);
     }
 
     fn nop(&self) { }
@@ -845,6 +872,135 @@ mod tests {
         assert_eq!(cwb.stack_pop(), 0xCC);
         assert_eq!(cwb.stack_pop(), 0xAB);
         assert_eq!(cwb.cpu.pc, 0x1234);
+    }
+
+    #[test]
+    fn test_lda_imm() {
+        let mut cwb = get_cpu();
+
+        cwb.lda_imm(-1 as i8 as u8);
+        assert_eq!(cwb.cpu.reg.get_a(), -1 as i8 as u8);
+        assert!(!cwb.cpu.reg.z);
+        assert!(cwb.cpu.reg.n);
+
+        cwb.lda_imm(0);
+        assert_eq!(cwb.cpu.reg.get_a(), 0);
+        assert!(cwb.cpu.reg.z);
+        assert!(!cwb.cpu.reg.n);
+
+        cwb.lda_imm(1);
+        assert_eq!(cwb.cpu.reg.get_a(), 1);
+        assert!(!cwb.cpu.reg.z);
+        assert!(!cwb.cpu.reg.n);
+    }
+
+    #[test]
+    fn test_lda_adr() {
+        let mut cwb = get_cpu();
+
+        cwb.bus.write(0, -1 as i8 as u8);
+        cwb.lda_adr(0);
+        assert_eq!(cwb.cpu.reg.get_a(), -1 as i8 as u8);
+        assert!(!cwb.cpu.reg.z);
+        assert!(cwb.cpu.reg.n);
+
+        cwb.bus.write(0, 0);
+        cwb.lda_adr(0);
+        assert_eq!(cwb.cpu.reg.get_a(), 0);
+        assert!(cwb.cpu.reg.z);
+        assert!(!cwb.cpu.reg.n);
+
+        cwb.bus.write(0, 1);
+        cwb.lda_adr(0);
+        assert_eq!(cwb.cpu.reg.get_a(), 1);
+        assert!(!cwb.cpu.reg.z);
+        assert!(!cwb.cpu.reg.n);
+    }
+
+    #[test]
+    fn test_ldx_imm() {
+        let mut cwb = get_cpu();
+
+        cwb.ldx_imm(-1 as i8 as u8);
+        assert_eq!(cwb.cpu.reg.get_x(), -1 as i8 as u8);
+        assert!(!cwb.cpu.reg.z);
+        assert!(cwb.cpu.reg.n);
+
+        cwb.ldx_imm(0);
+        assert_eq!(cwb.cpu.reg.get_x(), 0);
+        assert!(cwb.cpu.reg.z);
+        assert!(!cwb.cpu.reg.n);
+
+        cwb.ldx_imm(1);
+        assert_eq!(cwb.cpu.reg.get_x(), 1);
+        assert!(!cwb.cpu.reg.z);
+        assert!(!cwb.cpu.reg.n);
+    }
+
+    #[test]
+    fn test_ldx_adr() {
+        let mut cwb = get_cpu();
+
+        cwb.bus.write(0, -1 as i8 as u8);
+        cwb.ldx_adr(0);
+        assert_eq!(cwb.cpu.reg.get_x(), -1 as i8 as u8);
+        assert!(!cwb.cpu.reg.z);
+        assert!(cwb.cpu.reg.n);
+
+        cwb.bus.write(0, 0);
+        cwb.ldx_adr(0);
+        assert_eq!(cwb.cpu.reg.get_x(), 0);
+        assert!(cwb.cpu.reg.z);
+        assert!(!cwb.cpu.reg.n);
+
+        cwb.bus.write(0, 1);
+        cwb.ldx_adr(0);
+        assert_eq!(cwb.cpu.reg.get_x(), 1);
+        assert!(!cwb.cpu.reg.z);
+        assert!(!cwb.cpu.reg.n);
+    }
+
+    #[test]
+    fn test_ldy_imm() {
+        let mut cwb = get_cpu();
+
+        cwb.ldy_imm(-1 as i8 as u8);
+        assert_eq!(cwb.cpu.reg.get_y(), -1 as i8 as u8);
+        assert!(!cwb.cpu.reg.z);
+        assert!(cwb.cpu.reg.n);
+
+        cwb.ldy_imm(0);
+        assert_eq!(cwb.cpu.reg.get_y(), 0);
+        assert!(cwb.cpu.reg.z);
+        assert!(!cwb.cpu.reg.n);
+
+        cwb.ldy_imm(1);
+        assert_eq!(cwb.cpu.reg.get_y(), 1);
+        assert!(!cwb.cpu.reg.z);
+        assert!(!cwb.cpu.reg.n);
+    }
+
+    #[test]
+    fn test_ldy_adr() {
+        let mut cwb = get_cpu();
+
+        cwb.bus.write(0, -1 as i8 as u8);
+        cwb.ldy_adr(0);
+        assert_eq!(cwb.cpu.reg.get_y(), -1 as i8 as u8);
+        assert!(!cwb.cpu.reg.z);
+        assert!(cwb.cpu.reg.n);
+
+        cwb.bus.write(0, 0);
+        cwb.ldy_adr(0);
+        assert_eq!(cwb.cpu.reg.get_y(), 0);
+        assert!(cwb.cpu.reg.z);
+        assert!(!cwb.cpu.reg.n);
+
+        cwb.bus.write(0, 1);
+        cwb.ldy_adr(0);
+        assert_eq!(cwb.cpu.reg.get_y(), 1);
+        assert!(!cwb.cpu.reg.z);
+        assert!(!cwb.cpu.reg.n);
     }
 
     #[test]
