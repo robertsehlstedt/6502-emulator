@@ -232,8 +232,8 @@ impl<B: Bus, V: Variant> CpuWithBus<'_, B, V> {
 
             (InstructionCode::RTS, OperationInput::IMP) => self.rts(),
 
-            (InstructionCode::SBC, OperationInput::IMM(val)) => todo!(),
-            (InstructionCode::SBC, OperationInput::ADR(addr)) => todo!(),
+            (InstructionCode::SBC, OperationInput::IMM(val)) => self.sbc_imm(val),
+            (InstructionCode::SBC, OperationInput::ADR(addr)) => self.sbc_adr(addr),
 
             (InstructionCode::SEC, OperationInput::IMP) => self.sec(),
 
@@ -578,6 +578,15 @@ impl<B: Bus, V: Variant> CpuWithBus<'_, B, V> {
         let pc_low = self.stack_pop();
         let pc_high = self.stack_pop();
         self.cpu.pc = u16::from_le_bytes([pc_low, pc_high]).wrapping_add(1);
+    }
+
+    fn sbc_imm(&mut self, value: u8) {
+        self.adc_imm(!value); // 2s complement
+    }
+
+    fn sbc_adr(&mut self, addr: u16) {
+        let value = self.bus.read(addr);
+        self.sbc_imm(value);
     }
 
     fn sec(&mut self) {
