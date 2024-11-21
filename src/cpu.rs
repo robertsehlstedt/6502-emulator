@@ -206,8 +206,8 @@ impl<B: Bus, V: Variant> CpuWithBus<'_, B, V> {
             (InstructionCode::LDY, OperationInput::IMM(val)) => self.ldy_imm(val),
             (InstructionCode::LDY, OperationInput::ADR(addr)) => self.ldy_adr(addr),
 
-            (InstructionCode::LSR, OperationInput::IMP) => todo!(),
-            (InstructionCode::LSR, OperationInput::ADR(addr)) => todo!(),
+            (InstructionCode::LSR, OperationInput::IMP) => self.lsr_imp(),
+            (InstructionCode::LSR, OperationInput::ADR(addr)) => self.lsr_adr(addr),
 
             (InstructionCode::NOP, OperationInput::IMP) => self.nop(),
 
@@ -468,6 +468,19 @@ impl<B: Bus, V: Variant> CpuWithBus<'_, B, V> {
     fn ldy_adr(&mut self, addr: u16) {
         let value = self.bus.read(addr);
         self.ldy_imm(value);
+    }
+
+    fn lsr_imp(&mut self) {
+        self.cpu.reg.c = self.cpu.reg.get_a() & 0b0000_0001 != 0;
+        self.cpu.reg.update_a(self.cpu.reg.get_a() >> 1);
+    }
+
+    fn lsr_adr(&mut self, addr: u16) {
+        let n = self.bus.read(addr);
+        self.cpu.reg.c = n & 0b0000_0001 != 0;
+        let result = n >> 1;
+        self.bus.write(addr, result);
+        self.cpu.reg.update_nz_flags(result);
     }
 
     fn nop(&self) { }
@@ -1203,6 +1216,44 @@ mod tests {
         cwb.ldy_adr(0);
         assert_eq!(cwb.cpu.reg.get_y(), 1);
         assert!(!cwb.cpu.reg.z);
+        assert!(!cwb.cpu.reg.n);
+    }
+
+    #[test]
+    fn test_lsr_imp() {
+        let mut cwb = get_cpu();
+
+        cwb.cpu.reg.update_a(0b0000_0010);
+        cwb.lsr_imp();
+        assert_eq!(cwb.cpu.reg.get_a(), 0b0000_0001);
+        assert!(!cwb.cpu.reg.c);
+        assert!(!cwb.cpu.reg.z);
+        assert!(!cwb.cpu.reg.n);
+
+        cwb.cpu.reg.update_a(0b0000_0001);
+        cwb.lsr_imp();
+        assert_eq!(cwb.cpu.reg.get_a(), 0b0000_0000);
+        assert!(cwb.cpu.reg.c);
+        assert!(cwb.cpu.reg.z);
+        assert!(!cwb.cpu.reg.n);
+    }
+
+    #[test]
+    fn test_lsr_adr() {
+        let mut cwb = get_cpu();
+
+        cwb.bus.write(0, 0b0000_0010);
+        cwb.lsr_adr(0);
+        assert_eq!(cwb.bus.read(0), 0b0000_0001);
+        assert!(!cwb.cpu.reg.c);
+        assert!(!cwb.cpu.reg.z);
+        assert!(!cwb.cpu.reg.n);
+
+        cwb.bus.write(0, 0b0000_0001);
+        cwb.lsr_adr(0);
+        assert_eq!(cwb.cpu.reg.get_a(), 0b0000_0000);
+        assert!(cwb.cpu.reg.c);
+        assert!(cwb.cpu.reg.z);
         assert!(!cwb.cpu.reg.n);
     }
 
