@@ -222,11 +222,11 @@ impl<B: Bus, V: Variant> CpuWithBus<'_, B, V> {
 
             (InstructionCode::PLP, OperationInput::IMP) => self.plp(),
 
-            (InstructionCode::ROL, OperationInput::IMP) => todo!(),
-            (InstructionCode::ROL, OperationInput::ADR(addr)) => todo!(),
+            (InstructionCode::ROL, OperationInput::IMP) => self.rol_imp(),
+            (InstructionCode::ROL, OperationInput::ADR(addr)) => self.rol_adr(addr),
 
-            (InstructionCode::ROR, OperationInput::IMP) => todo!(),
-            (InstructionCode::ROR, OperationInput::ADR(addr)) => todo!(),
+            (InstructionCode::ROR, OperationInput::IMP) => self.ror_imp(),
+            (InstructionCode::ROR, OperationInput::ADR(addr)) => self.ror_adr(addr),
 
             (InstructionCode::RTI, OperationInput::IMP) => self.rti(),
 
@@ -510,6 +510,36 @@ impl<B: Bus, V: Variant> CpuWithBus<'_, B, V> {
     fn plp(&mut self) {
         let status = self.stack_pop();
         self.cpu.reg.set_status(status);
+    }
+
+    fn rol_imp(&mut self) {
+        let carry = self.cpu.reg.c;
+        self.cpu.reg.c = self.cpu.reg.get_a() & 0b1000_0000 != 0;
+        self.cpu.reg.update_a( (self.cpu.reg.get_a() << 1) | carry as u8);
+    }
+
+    fn rol_adr(&mut self, addr: u16) {
+        let n = self.bus.read(addr);
+        let carry = self.cpu.reg.c;
+        self.cpu.reg.c = n & 0b1000_0000 != 0;
+        let result = (n << 1) | carry as u8;
+        self.bus.write(addr, result);
+        self.cpu.reg.update_nz_flags(result);
+    }
+
+    fn ror_imp(&mut self) {
+        let carry = self.cpu.reg.c;
+        self.cpu.reg.c = self.cpu.reg.get_a() & 0b0000_0001 != 0;
+        self.cpu.reg.update_a( (self.cpu.reg.get_a() >> 1) | ((carry as u8) << 7));
+    }
+
+    fn ror_adr(&mut self, addr: u16) {
+        let n = self.bus.read(addr);
+        let carry = self.cpu.reg.c;
+        self.cpu.reg.c = n & 0b0000_0001 != 0;
+        let result = (n >> 1) | ((carry as u8) << 7);
+        self.bus.write(addr, result);
+        self.cpu.reg.update_nz_flags(result);
     }
 
     fn rti(&mut self) {
@@ -1336,6 +1366,138 @@ mod tests {
         cwb.stack_push(1);
         cwb.plp();
         assert!(cwb.cpu.reg.c);
+    }
+
+    #[test]
+    fn test_rol_imp() {
+        let mut cwb = get_cpu();
+
+        cwb.cpu.reg.update_a(0b0000_0001);
+        cwb.cpu.reg.c = false;
+        cwb.rol_imp();
+        assert_eq!(cwb.cpu.reg.get_a(), 0b0000_0010);
+        assert!(!cwb.cpu.reg.c);
+        assert!(!cwb.cpu.reg.z);
+        assert!(!cwb.cpu.reg.n);
+
+        cwb.cpu.reg.update_a(0b1000_0000);
+        cwb.cpu.reg.c = false;
+        cwb.rol_imp();
+        assert_eq!(cwb.cpu.reg.get_a(), 0b0000_0000);
+        assert!(cwb.cpu.reg.c);
+        assert!(cwb.cpu.reg.z);
+        assert!(!cwb.cpu.reg.n);
+
+        cwb.cpu.reg.update_a(0b0100_0000);
+        cwb.cpu.reg.c = false;
+        cwb.rol_imp();
+        assert_eq!(cwb.cpu.reg.get_a(), 0b1000_0000);
+        assert!(!cwb.cpu.reg.c);
+        assert!(!cwb.cpu.reg.z);
+        assert!(cwb.cpu.reg.n);
+
+        cwb.cpu.reg.update_a(0b0000_0000);
+        cwb.cpu.reg.c = true;
+        cwb.rol_imp();
+        assert_eq!(cwb.cpu.reg.get_a(), 0b0000_0001);
+        assert!(!cwb.cpu.reg.c);
+        assert!(!cwb.cpu.reg.z);
+        assert!(!cwb.cpu.reg.n);
+    }
+
+    #[test]
+    fn test_rol_adr() {
+        let mut cwb = get_cpu();
+
+        cwb.bus.write(0, 0b0000_0001);
+        cwb.cpu.reg.c = false;
+        cwb.rol_adr(0);
+        assert_eq!(cwb.bus.read(0), 0b0000_0010);
+        assert!(!cwb.cpu.reg.c);
+        assert!(!cwb.cpu.reg.z);
+        assert!(!cwb.cpu.reg.n);
+
+        cwb.bus.write(0, 0b1000_0000);
+        cwb.cpu.reg.c = false;
+        cwb.rol_adr(0);
+        assert_eq!(cwb.bus.read(0), 0b0000_0000);
+        assert!(cwb.cpu.reg.c);
+        assert!(cwb.cpu.reg.z);
+        assert!(!cwb.cpu.reg.n);
+
+        cwb.bus.write(0, 0b0100_0000);
+        cwb.cpu.reg.c = false;
+        cwb.rol_adr(0);
+        assert_eq!(cwb.bus.read(0), 0b1000_0000);
+        assert!(!cwb.cpu.reg.c);
+        assert!(!cwb.cpu.reg.z);
+        assert!(cwb.cpu.reg.n);
+
+        cwb.bus.write(0, 0b0000_0000);
+        cwb.cpu.reg.c = true;
+        cwb.rol_adr(0);
+        assert_eq!(cwb.bus.read(0), 0b0000_0001);
+        assert!(!cwb.cpu.reg.c);
+        assert!(!cwb.cpu.reg.z);
+        assert!(!cwb.cpu.reg.n);
+    }
+
+    #[test]
+    fn test_ror_imp() {
+        let mut cwb = get_cpu();
+
+        cwb.cpu.reg.update_a(0b0000_0010);
+        cwb.cpu.reg.c = false;
+        cwb.ror_imp();
+        assert_eq!(cwb.cpu.reg.get_a(), 0b0000_0001);
+        assert!(!cwb.cpu.reg.c);
+        assert!(!cwb.cpu.reg.z);
+        assert!(!cwb.cpu.reg.n);
+
+        cwb.cpu.reg.update_a(0b0000_0001);
+        cwb.cpu.reg.c = false;
+        cwb.ror_imp();
+        assert_eq!(cwb.cpu.reg.get_a(), 0b0000_0000);
+        assert!(cwb.cpu.reg.c);
+        assert!(cwb.cpu.reg.z);
+        assert!(!cwb.cpu.reg.n);
+
+        cwb.cpu.reg.update_a(0b0000_0000);
+        cwb.cpu.reg.c = true;
+        cwb.ror_imp();
+        assert_eq!(cwb.cpu.reg.get_a(), 0b1000_0000);
+        assert!(!cwb.cpu.reg.c);
+        assert!(!cwb.cpu.reg.z);
+        assert!(cwb.cpu.reg.n);
+    }
+
+    #[test]
+    fn test_ror_adr() {
+        let mut cwb = get_cpu();
+
+        cwb.bus.write(0, 0b0000_0010);
+        cwb.cpu.reg.c = false;
+        cwb.ror_adr(0);
+        assert_eq!(cwb.bus.read(0), 0b0000_0001);
+        assert!(!cwb.cpu.reg.c);
+        assert!(!cwb.cpu.reg.z);
+        assert!(!cwb.cpu.reg.n);
+
+        cwb.bus.write(0, 0b0000_0001);
+        cwb.cpu.reg.c = false;
+        cwb.ror_adr(0);
+        assert_eq!(cwb.bus.read(0), 0b0000_0000);
+        assert!(cwb.cpu.reg.c);
+        assert!(cwb.cpu.reg.z);
+        assert!(!cwb.cpu.reg.n);
+
+        cwb.bus.write(0, 0b0000_0000);
+        cwb.cpu.reg.c = true;
+        cwb.ror_adr(0);
+        assert_eq!(cwb.bus.read(0), 0b1000_0000);
+        assert!(!cwb.cpu.reg.c);
+        assert!(!cwb.cpu.reg.z);
+        assert!(cwb.cpu.reg.n);
     }
 
     #[test]
