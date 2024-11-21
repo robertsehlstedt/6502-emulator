@@ -220,7 +220,7 @@ impl<B: Bus, V: Variant> CpuWithBus<'_, B, V> {
             (InstructionCode::JMP, OperationInput::IMM(val)) => todo!(),
             (InstructionCode::JMP, OperationInput::ADR(addr)) => todo!(),
 
-            (InstructionCode::JSR, OperationInput::ADR(addr)) => todo!(),
+            (InstructionCode::JSR, OperationInput::ADR(addr)) => self.jsr(addr),
 
             (InstructionCode::LDA, OperationInput::IMM(val)) => todo!(),
             (InstructionCode::LDA, OperationInput::ADR(addr)) => todo!(),
@@ -390,6 +390,14 @@ impl<B: Bus, V: Variant> CpuWithBus<'_, B, V> {
         self.cpu.reg.update_y(self.cpu.reg.get_y().wrapping_add(1));
     }
 
+    fn jsr(&mut self, addr: u16) {
+        let return_addr = self.cpu.pc.wrapping_sub(1);
+        let [ret_low, ret_high] = return_addr.to_le_bytes();
+        self.stack_push(ret_high);
+        self.stack_push(ret_low);
+        self.cpu.pc = addr;
+    }
+
     fn nop(&self) { }
 
     fn pha(&mut self) {
@@ -421,7 +429,7 @@ impl<B: Bus, V: Variant> CpuWithBus<'_, B, V> {
     fn rts(&mut self) {
         let pc_low = self.stack_pop();
         let pc_high = self.stack_pop();
-        self.cpu.pc = u16::from_le_bytes([pc_low, pc_high]).wrapping_sub(1);
+        self.cpu.pc = u16::from_le_bytes([pc_low, pc_high]).wrapping_add(1);
     }
 
     fn sec(&mut self) {
@@ -643,6 +651,16 @@ mod tests {
     }
 
     #[test]
+    fn test_jsr() {
+        let mut cwb = get_cpu();
+        cwb.cpu.pc = 0xABCD;
+        cwb.jsr(0x1234);
+        assert_eq!(cwb.stack_pop(), 0xCC);
+        assert_eq!(cwb.stack_pop(), 0xAB);
+        assert_eq!(cwb.cpu.pc, 0x1234);
+    }
+
+    #[test]
     fn test_pha() {
         let mut cwb = get_cpu();
         cwb.cpu.reg.update_a(1);
@@ -691,7 +709,7 @@ mod tests {
         cwb.stack_push(0xFF);
         cwb.stack_push(0x0A);
         cwb.rts();
-        assert_eq!(cwb.cpu.pc, 0xFF09);
+        assert_eq!(cwb.cpu.pc, 0xFF0B);
     }
 
     #[test]
