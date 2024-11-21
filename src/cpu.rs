@@ -193,14 +193,14 @@ impl<B: Bus, V: Variant> CpuWithBus<'_, B, V> {
 
             (InstructionCode::CLV, OperationInput::IMP) => self.clv(),
 
-            (InstructionCode::CMP, OperationInput::IMM(val)) => todo!(),
-            (InstructionCode::CMP, OperationInput::ADR(addr)) => todo!(),
+            (InstructionCode::CMP, OperationInput::IMM(val)) => self.cmp_imm(val),
+            (InstructionCode::CMP, OperationInput::ADR(addr)) => self.cmp_adr(addr),
 
-            (InstructionCode::CPX, OperationInput::IMM(val)) => todo!(),
-            (InstructionCode::CPX, OperationInput::ADR(addr)) => todo!(),
+            (InstructionCode::CPX, OperationInput::IMM(val)) => self.cpx_imm(val),
+            (InstructionCode::CPX, OperationInput::ADR(addr)) => self.cpx_adr(addr),
 
-            (InstructionCode::CPY, OperationInput::IMM(val)) => todo!(),
-            (InstructionCode::CPY, OperationInput::ADR(addr)) => todo!(),
+            (InstructionCode::CPY, OperationInput::IMM(val)) => self.cpy_imm(val),
+            (InstructionCode::CPY, OperationInput::ADR(addr)) => self.cpy_adr(addr),
 
             (InstructionCode::DEC, OperationInput::ADR(addr)) => self.dec(addr),
 
@@ -358,6 +358,36 @@ impl<B: Bus, V: Variant> CpuWithBus<'_, B, V> {
 
     fn clv(&mut self) {
         self.cpu.reg.v = false;
+    }
+
+    fn cmp_imm(&mut self, value: u8) {
+        self.cpu.reg.update_nz_flags(self.cpu.reg.get_a().wrapping_sub(value));
+        self.cpu.reg.c = self.cpu.reg.get_a() >= value;
+    }
+
+    fn cmp_adr(&mut self, addr: u16) {
+        let value = self.bus.read(addr);
+        self.cmp_imm(value);
+    }
+
+    fn cpx_imm(&mut self, value: u8) {
+        self.cpu.reg.update_nz_flags(self.cpu.reg.get_x().wrapping_sub(value));
+        self.cpu.reg.c = self.cpu.reg.get_x() >= value;
+    }
+
+    fn cpx_adr(&mut self, addr: u16) {
+        let value = self.bus.read(addr);
+        self.cpx_imm(value);
+    }
+
+    fn cpy_imm(&mut self, value: u8) {
+        self.cpu.reg.update_nz_flags(self.cpu.reg.get_y().wrapping_sub(value));
+        self.cpu.reg.c = self.cpu.reg.get_y() >= value;
+    }
+
+    fn cpy_adr(&mut self, addr: u16) {
+        let value = self.bus.read(addr);
+        self.cpy_imm(value);
     }
     
     fn dec(&mut self, addr: u16) {
@@ -612,6 +642,147 @@ mod tests {
         cwb.cpu.reg.v = true;
         cwb.clv();
         assert!(!cwb.cpu.reg.v);
+    }
+
+    #[test]
+    fn test_cmp_imm() {
+        let mut cwb = get_cpu();
+
+        cwb.cpu.reg.update_a(0);
+        cwb.cmp_imm(1);
+        assert!(!cwb.cpu.reg.c);
+        assert!(!cwb.cpu.reg.z);
+        assert!(cwb.cpu.reg.n);
+
+        cwb.cpu.reg.update_a(1);
+        cwb.cmp_imm(1);
+        assert!(cwb.cpu.reg.c);
+        assert!(cwb.cpu.reg.z);
+        assert!(!cwb.cpu.reg.n);
+
+        cwb.cpu.reg.update_a(2);
+        cwb.cmp_imm(1);
+        assert!(cwb.cpu.reg.c);
+        assert!(!cwb.cpu.reg.z);
+        assert!(!cwb.cpu.reg.n);
+    }
+
+    #[test]
+    fn test_cmp_adr() {
+        let mut cwb = get_cpu();
+        cwb.bus.write(0xABCD, 1);
+
+        cwb.cpu.reg.update_a(0);
+        cwb.cmp_adr(0xABCD);
+        assert!(!cwb.cpu.reg.c);
+        assert!(!cwb.cpu.reg.z);
+        assert!(cwb.cpu.reg.n);
+
+        cwb.cpu.reg.update_a(1);
+        cwb.cmp_adr(0xABCD);
+        assert!(cwb.cpu.reg.c);
+        assert!(cwb.cpu.reg.z);
+        assert!(!cwb.cpu.reg.n);
+
+        cwb.cpu.reg.update_a(2);
+        cwb.cmp_adr(0xABCD);
+        assert!(cwb.cpu.reg.c);
+        assert!(!cwb.cpu.reg.z);
+        assert!(!cwb.cpu.reg.n);
+    }
+
+    #[test]
+    fn test_cpx_imm() {
+        let mut cwb = get_cpu();
+
+        cwb.cpu.reg.update_x(0);
+        cwb.cpx_imm(1);
+        assert!(!cwb.cpu.reg.c);
+        assert!(!cwb.cpu.reg.z);
+        assert!(cwb.cpu.reg.n);
+
+        cwb.cpu.reg.update_x(1);
+        cwb.cpx_imm(1);
+        assert!(cwb.cpu.reg.c);
+        assert!(cwb.cpu.reg.z);
+        assert!(!cwb.cpu.reg.n);
+
+        cwb.cpu.reg.update_x(2);
+        cwb.cpx_imm(1);
+        assert!(cwb.cpu.reg.c);
+        assert!(!cwb.cpu.reg.z);
+        assert!(!cwb.cpu.reg.n);
+    }
+
+    #[test]
+    fn test_cpx_adr() {
+        let mut cwb = get_cpu();
+        cwb.bus.write(0xABCD, 1);
+
+        cwb.cpu.reg.update_x(0);
+        cwb.cpx_adr(0xABCD);
+        assert!(!cwb.cpu.reg.c);
+        assert!(!cwb.cpu.reg.z);
+        assert!(cwb.cpu.reg.n);
+
+        cwb.cpu.reg.update_x(1);
+        cwb.cpx_adr(0xABCD);
+        assert!(cwb.cpu.reg.c);
+        assert!(cwb.cpu.reg.z);
+        assert!(!cwb.cpu.reg.n);
+
+        cwb.cpu.reg.update_x(2);
+        cwb.cpx_adr(0xABCD);
+        assert!(cwb.cpu.reg.c);
+        assert!(!cwb.cpu.reg.z);
+        assert!(!cwb.cpu.reg.n);
+    }
+
+    #[test]
+    fn test_cpy_imm() {
+        let mut cwb = get_cpu();
+
+        cwb.cpu.reg.update_y(0);
+        cwb.cpy_imm(1);
+        assert!(!cwb.cpu.reg.c);
+        assert!(!cwb.cpu.reg.z);
+        assert!(cwb.cpu.reg.n);
+
+        cwb.cpu.reg.update_y(1);
+        cwb.cpy_imm(1);
+        assert!(cwb.cpu.reg.c);
+        assert!(cwb.cpu.reg.z);
+        assert!(!cwb.cpu.reg.n);
+
+        cwb.cpu.reg.update_y(2);
+        cwb.cpy_imm(1);
+        assert!(cwb.cpu.reg.c);
+        assert!(!cwb.cpu.reg.z);
+        assert!(!cwb.cpu.reg.n);
+    }
+
+    #[test]
+    fn test_cpy_adr() {
+        let mut cwb = get_cpu();
+        cwb.bus.write(0xABCD, 1);
+
+        cwb.cpu.reg.update_y(0);
+        cwb.cpy_adr(0xABCD);
+        assert!(!cwb.cpu.reg.c);
+        assert!(!cwb.cpu.reg.z);
+        assert!(cwb.cpu.reg.n);
+
+        cwb.cpu.reg.update_y(1);
+        cwb.cpy_adr(0xABCD);
+        assert!(cwb.cpu.reg.c);
+        assert!(cwb.cpu.reg.z);
+        assert!(!cwb.cpu.reg.n);
+
+        cwb.cpu.reg.update_y(2);
+        cwb.cpy_adr(0xABCD);
+        assert!(cwb.cpu.reg.c);
+        assert!(!cwb.cpu.reg.z);
+        assert!(!cwb.cpu.reg.n);
     }
 
     #[test]
