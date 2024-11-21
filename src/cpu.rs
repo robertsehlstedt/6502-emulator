@@ -1,4 +1,5 @@
-use crate::registers::RegisterState;
+use crate::Cpu;
+use crate::Bus;
 use crate::Variant;
 use crate::instruction::{AddressingMode, OperationInput, InstructionCode, Instruction};
 
@@ -8,53 +9,34 @@ const IRQ_BRK_VECTOR:   u8 = 0xFE;
 const RESET_VECTOR:     u8 = 0xFC;
 const NMI_VECTOR:       u8 = 0xFA;
 
-pub trait Bus {
-    fn read(&self, addr: u16) -> u8;
-    fn write(&mut self, addr: u16, value: u8);
-}
-
-#[derive(Default, Clone, Copy)]
-pub struct Cpu<V> {
-    pub reg: RegisterState,
-    pub pc: u16,
-    pub sp: u8,
-
-    _variant: core::marker::PhantomData<V>,
-}
-
-impl<V: Variant> Cpu<V> {
-    pub fn new(_: V) -> Self {
-        Cpu {
-            reg: RegisterState::default(),
-            pc: 0,
-            sp: 0,
-            _variant: core::marker::PhantomData::<V>,
-        }
-    }
-
-    pub fn step(&mut self, bus: &mut impl Bus) {
-        CpuWithBus {cpu: self, bus}.step()
-    }
-
-    pub fn reset(&mut self, bus: &mut impl Bus) {
-        CpuWithBus {cpu: self, bus}.reset()
-    }
-
-    pub fn irq(&mut self, bus: &mut impl Bus) {
-        CpuWithBus {cpu: self, bus}.irq()
-    }
-
-    pub fn nmi(&mut self, bus: &mut impl Bus) {
-        CpuWithBus {cpu: self, bus}.nmi()
-    }
-}
-
-struct CpuWithBus<'c, B, V> {
-    cpu: &'c mut Cpu<V>,
-    bus: &'c mut B,
+pub struct CpuWithBus<'c, B, V> {
+    pub cpu: &'c mut Cpu<V>,
+    pub bus: &'c mut B,
 }
 
 impl<B: Bus, V: Variant> CpuWithBus<'_, B, V> {
+    pub fn reset(&mut self) {
+        self.cpu.reg.i = true;
+        self.cpu.sp = self.cpu.sp.wrapping_add(3);
+        self.cpu.pc = self.read_u16(VECTOR_BASE, RESET_VECTOR);
+    }
+    
+    pub fn irq(&mut self) {
+        if (!self.cpu.reg.i) {
+            self.interrupt(IRQ_BRK_VECTOR, false);
+        }
+    }
+
+    pub fn nmi(&mut self) {
+        self.interrupt(NMI_VECTOR, false);
+    }
+
+    pub fn step(&mut self) {
+        let (instr_code, addr_mode) = V::decode(self.take_u8_at_pc()).unwrap();
+        let op_input = self.execute_addressing(addr_mode);
+        self.execute_operation((instr_code, op_input));
+    }
+
     fn read_u16(&mut self, high: u8, low: u8) -> u16 {
         let u16_low = u16::from_le_bytes([low, high]);
         let u16_high = u16::from_le_bytes([low.wrapping_add(1), high]);
@@ -81,27 +63,6 @@ impl<B: Bus, V: Variant> CpuWithBus<'_, B, V> {
         self.cpu.sp = self.cpu.sp.wrapping_add(1);
         let addr = u16::from_le_bytes([self.cpu.sp, STACK_BASE]);
         self.bus.read(addr)
-    }
-
-    fn reset(&mut self) {
-        self.cpu.reg.i = true;
-        self.cpu.sp = self.cpu.sp.wrapping_add(3);
-        self.cpu.pc = self.read_u16(VECTOR_BASE, RESET_VECTOR);
-    }
-    
-    fn irq(&mut self) {
-        if (!self.cpu.reg.i) {
-            self.interrupt(IRQ_BRK_VECTOR, false);
-        }
-    }
-    fn nmi(&mut self) {
-        self.interrupt(NMI_VECTOR, false);
-    }
-
-    fn step(&mut self) {
-        let (instr_code, addr_mode) = V::decode(self.take_u8_at_pc()).unwrap();
-        let op_input = self.execute_addressing(addr_mode);
-        self.execute_operation((instr_code, op_input));
     }
 
     fn interrupt(&mut self, vector: u8, brk: bool) {
