@@ -17,7 +17,7 @@ pub struct CpuWithBus<'c, B, V> {
 impl<B: Bus, V: Variant> CpuWithBus<'_, B, V> {
     pub fn reset(&mut self) {
         self.cpu.reg.i = true;
-        self.cpu.sp = self.cpu.sp.wrapping_add(3);
+        self.cpu.sp = self.cpu.sp.wrapping_sub(3);
         self.cpu.pc = self.read_u16(VECTOR_BASE, RESET_VECTOR);
     }
     
