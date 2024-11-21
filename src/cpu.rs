@@ -22,7 +22,7 @@ impl<B: Bus, V: Variant> CpuWithBus<'_, B, V> {
     }
     
     pub fn irq(&mut self) {
-        if (!self.cpu.reg.i) {
+        if !self.cpu.reg.i {
             self.interrupt(IRQ_BRK_VECTOR, false);
         }
     }
@@ -265,42 +265,42 @@ impl<B: Bus, V: Variant> CpuWithBus<'_, B, V> {
     }
 
     fn bcc(&mut self, offset: u16) {
-        if (!self.cpu.reg.c) {
+        if !self.cpu.reg.c {
             let addr = self.cpu.pc.wrapping_add(offset);
             self.cpu.pc = addr;
         }
     }
 
     fn bcs(&mut self, offset: u16) {
-        if (self.cpu.reg.c) {
+        if self.cpu.reg.c {
             let addr = self.cpu.pc.wrapping_add(offset);
             self.cpu.pc = addr;
         }
     }
 
     fn beq(&mut self, offset: u16) {
-        if (self.cpu.reg.z) {
+        if self.cpu.reg.z {
             let addr = self.cpu.pc.wrapping_add(offset);
             self.cpu.pc = addr;
         }
     }
 
     fn bmi(&mut self, offset: u16) {
-        if (self.cpu.reg.n) {
+        if self.cpu.reg.n {
             let addr = self.cpu.pc.wrapping_add(offset);
             self.cpu.pc = addr;
         }
     }
 
     fn bne(&mut self, offset: u16) {
-        if (!self.cpu.reg.z) {
+        if !self.cpu.reg.z {
             let addr = self.cpu.pc.wrapping_add(offset);
             self.cpu.pc = addr;
         }
     }
 
     fn bpl(&mut self, offset: u16) {
-        if (!self.cpu.reg.n) {
+        if !self.cpu.reg.n {
             let addr = self.cpu.pc.wrapping_add(offset);
             self.cpu.pc = addr;
         }
@@ -312,14 +312,14 @@ impl<B: Bus, V: Variant> CpuWithBus<'_, B, V> {
     }
 
     fn bvc(&mut self, offset: u16) {
-        if (!self.cpu.reg.v) {
+        if !self.cpu.reg.v {
             let addr = self.cpu.pc.wrapping_add(offset);
             self.cpu.pc = addr;
         }
     }
 
     fn bvs(&mut self, offset: u16) {
-        if (self.cpu.reg.v) {
+        if self.cpu.reg.v {
             let addr = self.cpu.pc.wrapping_add(offset);
             self.cpu.pc = addr;
         }
