@@ -193,8 +193,7 @@ impl<B: Bus, V: Variant> CpuWithBus<'_, B, V> {
 
             (InstructionCode::INY, OperationInput::IMP) => self.iny(),
 
-            (InstructionCode::JMP, OperationInput::IMM(val)) => todo!(),
-            (InstructionCode::JMP, OperationInput::ADR(addr)) => todo!(),
+            (InstructionCode::JMP, OperationInput::ADR(addr)) => self.jmp(addr),
 
             (InstructionCode::JSR, OperationInput::ADR(addr)) => self.jsr(addr),
 
@@ -399,6 +398,10 @@ impl<B: Bus, V: Variant> CpuWithBus<'_, B, V> {
 
     fn iny(&mut self) {
         self.cpu.reg.update_y(self.cpu.reg.get_y().wrapping_add(1));
+    }
+
+    fn jmp(&mut self, addr: u16) {
+        self.cpu.pc = addr;
     }
 
     fn jsr(&mut self, addr: u16) {
@@ -825,6 +828,13 @@ mod tests {
         let before = cwb.cpu.reg.get_y();
         cwb.iny();
         assert_eq!(cwb.cpu.reg.get_y(), before.wrapping_add(1));
+    }
+
+    #[test]
+    fn test_jmp() {
+        let mut cwb = get_cpu();
+        cwb.jmp(0xABCD);
+        assert_eq!(cwb.cpu.pc, 0xABCD);
     }
 
     #[test]
