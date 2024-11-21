@@ -155,7 +155,7 @@ impl<B: Bus, V: Variant> CpuWithBus<'_, B, V> {
 
             (InstructionCode::BPL, OperationInput::REL(offset)) => self.bpl(offset),
 
-            (InstructionCode::BRK, OperationInput::REL(offset)) => self.brk(),
+            (InstructionCode::BRK, OperationInput::IMP) => self.brk(),
 
             (InstructionCode::BVC, OperationInput::REL(offset)) => self.bvc(offset),
 
