@@ -27,7 +27,7 @@ pub struct Cpu<V> {
 }
 
 impl<V: Variant> Cpu<V> {
-    pub fn new(_: V) -> Self {
+    pub fn new() -> Self {
         Cpu {
             reg: registers::RegisterState::default(),
             pc: 0,

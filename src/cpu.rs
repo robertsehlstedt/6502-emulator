@@ -660,7 +660,7 @@ mod tests {
     }
 
     fn get_cpu() -> CpuWithBus<'static, MockBus, MockVariant> {
-        let cpu = Box::leak(Box::new(Cpu::new(MockVariant)));
+        let cpu = Box::leak(Box::new(Cpu::<MockVariant>::new()));
         let bus = Box::leak(Box::new(MockBus([0; 65536])));
         CpuWithBus {cpu: cpu, bus: bus}
     }
